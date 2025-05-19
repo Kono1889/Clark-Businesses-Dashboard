@@ -14,6 +14,7 @@ import {
   Landmark,
   ShoppingBasket,
   Boxes,
+  Gem,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -130,7 +131,7 @@ const Sidebar = ({ onToggle }) => {
         <SidebarItem
           to="/products"
           icon={ShoppingBasket}
-          text="Produts "
+          text="Products "
           isOpen={isOpen}
           setActiveHover={setActiveHover}
           activeHover={activeHover}
@@ -147,7 +148,7 @@ const Sidebar = ({ onToggle }) => {
         />
         <SidebarItem
           to="/promo"
-          icon={Boxes}
+          icon={Gem}
           text="Promotions "
           isOpen={isOpen}
           setActiveHover={setActiveHover}
