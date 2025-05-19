@@ -4,7 +4,11 @@ import CustomerManagementScreen from "../screens/CustomerManagementScreen";
 import OrdersScreen from "../screens/OrdersScreen";
 import FinancialScreen from "../screens/FinancialScreen";
 import OverviewScreen from "../screens/OverviewScreen";
+import ProductScreen from "../screens/ProductScreen";
+
 import Layout from "../Layout/Layout";
+import CategoriesScreen from "../screens/CategoriesScreen";
+import PromoScreen from "../screens/PromoScreen";
 
 const Routers = () => {
   return (
@@ -20,8 +24,10 @@ const Routers = () => {
         <Route path="/financialreport" element={<FinancialScreen />} />
         <Route path="/orders" element={<OrdersScreen />} />
         <Route path="/analytics" element={<AnalyticsScreen />} />
+        <Route path="/products" element={<ProductScreen />} />
+        <Route path="/categories" element={<CategoriesScreen />} />
+        <Route path="/promo" element={< PromoScreen/>} />
       </Route>
-
     </Routes>
   );
 };
