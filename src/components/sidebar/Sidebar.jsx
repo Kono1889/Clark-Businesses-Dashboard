@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const Sidebar = ({ onToggle }) => {
+const Sidebar = ({ onToggle, onLogout }) => {
   const [isOpen, setIsOpen] = useState(true);
   const [activeHover, setActiveHover] = useState(null);
 
@@ -29,6 +29,13 @@ const Sidebar = ({ onToggle }) => {
     // Communicate state change to parent component
     if (onToggle) {
       onToggle(newState);
+    }
+  };
+
+  // Handle logout
+  const handleLogout = () => {
+    if (onLogout) {
+      onLogout();
     }
   };
 
@@ -58,10 +65,7 @@ const Sidebar = ({ onToggle }) => {
     },
   };
 
-  // Rest of your component remains the same
-
   return (
-    
     <motion.div
       initial="open"
       animate={isOpen ? "open" : "closed"}
@@ -184,13 +188,12 @@ const Sidebar = ({ onToggle }) => {
         {isOpen && "v1.0.2"}
       </motion.div>
 
-      {/* Logout */}
-      <SidebarItem
-        to="/login"
+      {/* Logout - Modified to use button instead of NavLink */}
+      <LogoutButton
         icon={LogOut}
         text="Logout"
         isOpen={isOpen}
-        isLogout
+        onLogout={handleLogout}
         setActiveHover={setActiveHover}
         activeHover={activeHover}
         id="logout"
@@ -199,27 +202,22 @@ const Sidebar = ({ onToggle }) => {
   );
 };
 
-// SidebarItem component remains unchanged
+// Regular SidebarItem component for navigation links
 const SidebarItem = ({
   to,
   icon: Icon,
   text,
   isOpen,
-  isLogout,
   setActiveHover,
   activeHover,
   id,
 }) => {
-  // Tooltip for collapsed state
   const [showTooltip, setShowTooltip] = useState(false);
 
   const itemVariants = {
-    // change sidebar active and inactive styling here
     active: {
-      backgroundColor: isLogout
-        ? "rgba(254, 226, 226, 1)"
-        : "rgba(221, 118, 28, 0.2)",
-      color: isLogout ? "rgba(220, 38, 38, 1)" : "rgb(221, 118, 28)", 
+      backgroundColor: "rgba(221, 118, 28, 0.2)",
+      color: "rgb(221, 118, 28)", 
       x: 0,
       transition: {
         type: "spring",
@@ -229,17 +227,14 @@ const SidebarItem = ({
     },
     inactive: {
       backgroundColor: "transparent",
-      color: isLogout ? "rgba(220, 38, 38, 0.7)" : "rgba(75, 85, 99, 1)",
+      color: "rgba(75, 85, 99, 1)",
       x: 0,
     },
     hover: {
-      backgroundColor: isLogout
-        ? "rgba(254, 226, 226, 0.7)"
-        : "rgba(254, 185, 65, 0.2)",
-      color: isLogout ? "rgba(220, 38, 38, 0.9)" : "rgb(254, 185, 65)",
+      backgroundColor: "rgba(254, 185, 65, 0.2)",
+      color: "rgb(254, 185, 65)",
       x: 4,
-      transition: {
-      },
+      transition: {},
     },
   };
 
@@ -264,13 +259,11 @@ const SidebarItem = ({
             animate={
               isActive ? "active" : activeHover === id ? "hover" : "inactive"
             }
-            className={`flex items-center rounded-lg p-3 transition-all duration-200 ${
-              isLogout ? "text-red-500" : ""
-            }`}
+            className="flex items-center rounded-lg p-3 transition-all duration-200"
             whileTap={{ scale: 0.95 }}
           >
             <motion.div
-              whileHover={{ rotate: isLogout ? 0 : 20 }}
+              whileHover={{ rotate: 20 }}
               transition={{ type: "spring", stiffness: 300, damping: 10 }}
             >
               <Icon size={22} className="min-w-5" />
@@ -301,16 +294,102 @@ const SidebarItem = ({
             animate={{ opacity: 1, x: 50 }}
             exit={{ opacity: 0, x: -10 }}
             transition={{ duration: 0.2 }}
-            className={`absolute left-full top-1/2 transform -translate-y-1/2 z-20 px-2 py-1 rounded text-white text-xs whitespace-nowrap ${
-              isLogout ? "bg-red-500" : "bg-indigo-600"
-            }`}
+            className="absolute left-full top-1/2 transform -translate-y-1/2 z-20 px-2 py-1 rounded text-white text-xs whitespace-nowrap bg-indigo-600"
           >
             {text}
-            <div
-              className={`absolute top-1/2 -left-1 transform -translate-y-1/2 w-2 h-2 rotate-45 ${
-                isLogout ? "bg-red-500" : "bg-indigo-600"
-              }`}
-            ></div>
+            <div className="absolute top-1/2 -left-1 transform -translate-y-1/2 w-2 h-2 rotate-45 bg-indigo-600"></div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+};
+
+// Separate LogoutButton component that handles logout action
+const LogoutButton = ({
+  icon: Icon,
+  text,
+  isOpen,
+  onLogout,
+  setActiveHover,
+  activeHover,
+  id,
+}) => {
+  const [showTooltip, setShowTooltip] = useState(false);
+
+  const itemVariants = {
+    inactive: {
+      backgroundColor: "transparent",
+      color: "rgba(220, 38, 38, 0.7)",
+      x: 0,
+    },
+    hover: {
+      backgroundColor: "rgba(254, 226, 226, 0.7)",
+      color: "rgba(220, 38, 38, 0.9)",
+      x: 4,
+      transition: {},
+    },
+  };
+
+  const handleClick = () => {
+    onLogout();
+  };
+
+  return (
+    <div className="relative">
+      <button
+        onClick={handleClick}
+        className="block w-full text-left"
+        onMouseEnter={() => {
+          setActiveHover(id);
+          if (!isOpen) setShowTooltip(true);
+        }}
+        onMouseLeave={() => {
+          setActiveHover(null);
+          setShowTooltip(false);
+        }}
+      >
+        <motion.div
+          variants={itemVariants}
+          initial="inactive"
+          animate={activeHover === id ? "hover" : "inactive"}
+          className="flex items-center rounded-lg p-3 transition-all duration-200 text-red-500"
+          whileTap={{ scale: 0.95 }}
+        >
+          <motion.div
+            transition={{ type: "spring", stiffness: 300, damping: 10 }}
+          >
+            <Icon size={22} className="min-w-5" />
+          </motion.div>
+
+          <AnimatePresence>
+            {isOpen && (
+              <motion.span
+                initial={{ opacity: 0, width: 0 }}
+                animate={{ opacity: 1, width: "auto" }}
+                exit={{ opacity: 0, width: 0 }}
+                transition={{ duration: 0.2 }}
+                className="ml-3 font-medium"
+              >
+                {text}
+              </motion.span>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      </button>
+
+      {/* Tooltip for collapsed state */}
+      <AnimatePresence>
+        {showTooltip && !isOpen && (
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 50 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.2 }}
+            className="absolute left-full top-1/2 transform -translate-y-1/2 z-20 px-2 py-1 rounded text-white text-xs whitespace-nowrap bg-red-500"
+          >
+            {text}
+            <div className="absolute top-1/2 -left-1 transform -translate-y-1/2 w-2 h-2 rotate-45 bg-red-500"></div>
           </motion.div>
         )}
       </AnimatePresence>
