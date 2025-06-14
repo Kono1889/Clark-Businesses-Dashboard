@@ -96,6 +96,16 @@ const AddProducts = () => {
       formData.append('subcategory', data.subcategory);
       formData.append('condition', data.condition || 'new');
       
+      // Append optional discount (only if provided and not empty)
+      if (data.discount && data.discount.trim() !== '') {
+        formData.append('discount', data.discount);
+      }
+      
+      // Append optional tags (only if provided and not empty)
+      if (data.tags && data.tags.trim() !== '') {
+        formData.append('tags', data.tags);
+      }
+      
       // Append images
       productImages.forEach((image, index) => {
         formData.append('images', image);
@@ -157,6 +167,8 @@ const AddProducts = () => {
       setValue('categoryId', '');
       setValue('subcategory', '');
       setValue('quantity', '');
+      setValue('discount', '');
+      setValue('tags', '');
 
       // Navigate to analytics page after a short delay
       setTimeout(() => {
@@ -247,6 +259,17 @@ const AddProducts = () => {
               <option value="used">Used</option>
               <option value="refurbished">Refurbished</option>
             </select>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Tags (Optional)</label>
+            <input
+              type="text"
+              className="w-full p-2 border border-gray-300 rounded-md"
+              placeholder="Fast, Turbo Engine, Affordable (comma-separated)"
+              {...register('tags')}
+            />
+            <p className="text-xs text-gray-500 mt-1">Add relevant tags separated by commas to help customers find your product</p>
           </div>
         </section>
 
@@ -349,6 +372,20 @@ const AddProducts = () => {
                 placeholder="180.00"
                 {...register('price', { required: true })}
               />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Discount (%) - Optional</label>
+              <input
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                className="w-full p-2 border border-gray-300 rounded-md"
+                placeholder="30"
+                {...register('discount')}
+              />
+              <p className="text-xs text-gray-500 mt-1">Leave empty for no discount</p>
             </div>
           </div>
         </section>
