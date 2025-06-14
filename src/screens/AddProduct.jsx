@@ -28,7 +28,7 @@ const AddProducts = () => {
 
         // Fetch categories
         const categoriesResponse = await axios.get(
-          'https://clark-backend.onrender.com/api/v1/categories',
+          'http://localhost:3000/api/v1/categories',
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -40,7 +40,7 @@ const AddProducts = () => {
 
         // Fetch promotion plans
         const promotionsResponse = await axios.get(
-          'https://clark-backend.onrender.com/api/v1/promotions',
+          'http://localhost:3000/api/v1/promotions',
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -64,6 +64,119 @@ const AddProducts = () => {
 
     fetchData();
   }, []);
+
+  // Check for payment success on component mount (when returning from payment)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const paymentStatus = urlParams.get('payment');
+    const productId = urlParams.get('product_id') || localStorage.getItem('pendingProductId');
+
+    if (paymentStatus === 'success' && productId) {
+      handlePaymentSuccess(productId);
+      localStorage.removeItem('pendingProductId');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    } else if (paymentStatus === 'cancelled' && productId) {
+      handlePaymentCancellation(productId);
+      localStorage.removeItem('pendingProductId');
+      // Clean URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
+
+  const handlePaymentSuccess = async (productId) => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Update product with payment verification
+      await axios.patch(
+        `http://localhost:3000/api/v1/products/${productId}/activate-promotion`,
+        {
+          paymentVerified: true,
+          paymentStatus: 'completed'
+        },
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          }
+        }
+      );
+
+      toast.success('Payment successful! Your product is now live with premium promotion.', {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
+      // Navigate to products page after a short delay
+      setTimeout(() => {
+        navigate('/products');
+      }, 2000);
+
+    } catch (err) {
+      console.error('Error activating promotion after payment:', err);
+      toast.error('Payment successful but failed to activate promotion. Please contact support.', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePaymentCancellation = async (productId) => {
+    setIsLoading(true);
+    try {
+      const token = localStorage.getItem('accessToken');
+      if (!token) {
+        throw new Error('Not authenticated');
+      }
+
+      // Delete the product since payment was cancelled
+      await axios.delete(
+        `http://localhost:3000/api/v1/products/${productId}`,
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`,
+          }
+        }
+      );
+
+      toast.error('Payment was cancelled. Product has been removed.', {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+
+    } catch (err) {
+      console.error('Error removing product after payment cancellation:', err);
+      toast.warning('Payment cancelled. Please check your products and contact support if needed.', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   const onSubmit = async (data) => {
     if (productImages.length === 0) {
@@ -139,13 +252,16 @@ const AddProducts = () => {
         formData.append('images', image);
       });
 
-      // Append promotion plan if selected
+      // For premium plans, mark as pending payment
       if (selectedPromotion !== 'free') {
         formData.append('promotionPlan[type]', selectedPromotion);
+        formData.append('promotionPlan[paymentStatus]', 'pending');
+        formData.append('status', 'draft'); // Keep as draft until payment
       }
 
+      // Create the product first
       const response = await axios.post(
-        'https://clark-backend.onrender.com/api/v1/products',
+        'http://localhost:3000/api/v1/products',
         formData,
         {
           headers: {
@@ -155,17 +271,24 @@ const AddProducts = () => {
         }
       );
 
+      const productId = response.data.data.product._id;
+
       // If premium plan selected, redirect to payment
       if (selectedPromotion !== 'free') {
         const selectedPlan = promotionPlans.find(plan => plan.type === selectedPromotion);
         if (selectedPlan) {
+          // Store product ID for after payment
+          localStorage.setItem('pendingProductId', productId);
+
           const paymentResponse = await axios.post(
-            'https://clark-backend.onrender.com/api/v1/payments/initialize',
+            'http://localhost:3000/api/v1/payments/initialize',
             {
               email: user.email,
-              amount: selectedPlan.price, // convert to kobo
-              productId: response.data.data.product._id,
-              planType: selectedPromotion
+              amount: selectedPlan.price,
+              productId: productId, // Now we have the product ID
+              planType: selectedPromotion,
+              callback_url: `${window.location.origin}${window.location.pathname}?payment=success&product_id=${productId}`,
+              cancel_url: `${window.location.origin}${window.location.pathname}?payment=cancelled&product_id=${productId}`
             },
             {
               headers: {
@@ -175,10 +298,9 @@ const AddProducts = () => {
             }
           );
           
-          // Show success message before redirect
-          toast.success('Product added successfully! Redirecting to payment...', {
+          toast.info('Product created! Redirecting to payment to activate promotion...', {
             position: "top-right",
-            autoClose: 2000,
+            autoClose: 3000,
             hideProgressBar: false,
             closeOnClick: true,
             pauseOnHover: true,
@@ -188,7 +310,7 @@ const AddProducts = () => {
           // Redirect to payment URL after a short delay
           setTimeout(() => {
             window.location.href = paymentResponse.data.data.authorization_url;
-          }, 2000);
+          }, 3000);
           return;
         }
       }
@@ -204,16 +326,7 @@ const AddProducts = () => {
       });
       
       // Reset form
-      setProductImages([]);
-      setValue('productName', '');
-      setValue('price', '');
-      setValue('businessDescription', '');
-      setValue('categoryId', '');
-      setValue('subcategory', '');
-      setValue('quantity', '');
-      setValue('discount', '');
-      setValue('tags', '');
-      setSelectedPromotion('free');
+      resetForm();
 
       // Navigate to products page after a short delay
       setTimeout(() => {
@@ -233,6 +346,19 @@ const AddProducts = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const resetForm = () => {
+    setProductImages([]);
+    setValue('productName', '');
+    setValue('price', '');
+    setValue('businessDescription', '');
+    setValue('categoryId', '');
+    setValue('subcategory', '');
+    setValue('quantity', '');
+    setValue('discount', '');
+    setValue('tags', '');
+    setSelectedPromotion('free');
   };
 
   const handleImageUpload = (e) => {
@@ -268,16 +394,6 @@ const AddProducts = () => {
     
     setProductImages([...productImages, ...files]);
     setError('');
-    
-    // Show success message for image upload
-    toast.success(`${files.length} image(s) uploaded successfully`, {
-      position: "top-right",
-      autoClose: 2000,
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-    });
   };
 
   const removeImage = (index) => {
@@ -511,6 +627,11 @@ const AddProducts = () => {
                 <span className="flex-1">
                   <span className="block font-medium">{plan.name} (${plan.price})</span>
                   <span className="block text-sm text-gray-500">{plan.description}</span>
+                  {selectedPromotion === plan.type && (
+                    <span className="block text-xs text-blue-600 mt-1">
+                      📝 Product will be created first, then payment will activate promotion
+                    </span>
+                  )}
                 </span>
               </label>
             ))}
@@ -541,8 +662,10 @@ const AddProducts = () => {
                 </svg>
                 Processing...
               </span>
-            ) : (
+            ) : selectedPromotion === 'free' ? (
               'Add Product'
+            ) : (
+              'Create Product & Pay'
             )}
           </button>
         </div>
