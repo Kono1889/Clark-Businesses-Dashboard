@@ -3,8 +3,8 @@ import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 import { ChevronDown, Plus, Trash2, Upload } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
-import { toast } from 'react-hot-toast'; // Assuming you're using react-hot-toast
-// import { toast } from 'react-toastify'; // Alternative if using react-toastify
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 
 const AddProducts = () => {
@@ -51,7 +51,14 @@ const AddProducts = () => {
         setPromotionPlans(promotionsResponse.data.data.promotionPlans);
       } catch (err) {
         console.error('Error fetching data:', err);
-        toast.error('Failed to load categories and promotion plans');
+        toast.error('Failed to load categories and promotion plans', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
       }
     };
 
@@ -60,19 +67,40 @@ const AddProducts = () => {
 
   const onSubmit = async (data) => {
     if (productImages.length === 0) {
-      toast.error('Please upload at least one product image');
+      toast.error('Please upload at least one product image', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       return;
     }
 
     if (productImages.length > 5) {
-      toast.error('Maximum 5 images allowed');
+      toast.error('Maximum 5 images allowed', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       return;
     }
 
     // Check each image size
     for (const image of productImages) {
       if (image.size > 10 * 1024 * 1024) { // 10MB
-        toast.error('Each image should be less than 10MB');
+        toast.error('Each image should be less than 10MB', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         return;
       }
     }
@@ -148,16 +176,32 @@ const AddProducts = () => {
           );
           
           // Show success message before redirect
-          toast.success('Product added successfully! Redirecting to payment...');
+          toast.success('Product added successfully! Redirecting to payment...', {
+            position: "top-right",
+            autoClose: 2000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+          });
           
-          // Redirect to payment URL
-          window.location.href = paymentResponse.data.data.authorization_url;
+          // Redirect to payment URL after a short delay
+          setTimeout(() => {
+            window.location.href = paymentResponse.data.data.authorization_url;
+          }, 2000);
           return;
         }
       }
 
-      // Show success toast
-      toast.success('Product added successfully!');
+      // Show success toast for free plan
+      toast.success('Product added successfully!', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       
       // Reset form
       setProductImages([]);
@@ -169,15 +213,23 @@ const AddProducts = () => {
       setValue('quantity', '');
       setValue('discount', '');
       setValue('tags', '');
+      setSelectedPromotion('free');
 
-      // Navigate to analytics page after a short delay
+      // Navigate to products page after a short delay
       setTimeout(() => {
         navigate('/products');
       }, 1500);
 
     } catch (err) {
       console.error('Error submitting product:', err);
-      toast.error(err.response?.data?.message || 'Failed to add product');
+      toast.error(err.response?.data?.message || 'Failed to add product. Please try again.', {
+        position: "top-right",
+        autoClose: 4000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -188,24 +240,56 @@ const AddProducts = () => {
     
     // Check total number of images
     if (productImages.length + files.length > 5) {
-      toast.error('Maximum 5 images allowed');
+      toast.error('Maximum 5 images allowed', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
       return;
     }
     
     // Check each file size
     for (const file of files) {
       if (file.size > 10 * 1024 * 1024) { // 10MB
-        toast.error('Each image should be less than 10MB');
+        toast.error('Each image should be less than 10MB', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
         return;
       }
     }
     
     setProductImages([...productImages, ...files]);
     setError('');
+    
+    // Show success message for image upload
+    toast.success(`${files.length} image(s) uploaded successfully`, {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
   };
 
   const removeImage = (index) => {
     setProductImages(productImages.filter((_, i) => i !== index));
+    toast.info('Image removed', {
+      position: "top-right",
+      autoClose: 2000,
+      hideProgressBar: false,
+      closeOnClick: true,
+      pauseOnHover: true,
+      draggable: true,
+    });
   };
 
   // Get subcategories for selected category
@@ -233,28 +317,29 @@ const AddProducts = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="Full Spectrum CBD Tincture - Pet Tincture"
-              {...register('productName', { required: true })}
+              {...register('productName', { required: 'Product name is required' })}
             />
           </div>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Business Description*</label>
             <textarea
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               rows={3}
               placeholder="We've partnered with Coastal Green Wellness based out of Myrtle Beach South Carolina"
-              {...register('businessDescription', { required: true })}
+              {...register('businessDescription', { required: 'Description is required' })}
             ></textarea>
           </div>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Condition*</label>
             <select
-              className="w-full p-2 border border-gray-300 rounded-md"
-              {...register('condition', { required: true })}
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              {...register('condition', { required: 'Condition is required' })}
             >
+              <option value="">Select condition</option>
               <option value="new">New</option>
               <option value="used">Used</option>
               <option value="refurbished">Refurbished</option>
@@ -265,7 +350,7 @@ const AddProducts = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Tags (Optional)</label>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-md"
+              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
               placeholder="Fast, Turbo Engine, Affordable (comma-separated)"
               {...register('tags')}
             />
@@ -281,8 +366,8 @@ const AddProducts = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Main Category</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md"
-                {...register('categoryId', { required: true })}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                {...register('categoryId', { required: 'Category is required' })}
               >
                 <option value="">Select a category</option>
                 {categories.map(category => (
@@ -296,8 +381,8 @@ const AddProducts = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md"
-                {...register('subcategory', { required: true })}
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                {...register('subcategory', { required: 'Subcategory is required' })}
                 disabled={!selectedCategoryId}
               >
                 <option value="">Select a subcategory</option>
@@ -315,7 +400,7 @@ const AddProducts = () => {
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Product Images* (Max 5, 10MB each)</h2>
           
-          <div className="border-2 border-dashed border-gray-300 rounded-md p-4">
+          <div className="border-2 border-dashed border-gray-300 rounded-md p-4 hover:border-indigo-400 transition-colors">
             <div className="flex flex-col items-center justify-center py-8">
               <Upload className="h-12 w-12 text-gray-400 mb-2" />
               <p className="text-sm text-gray-600 mb-2">Drag and drop images here or click to browse</p>
@@ -329,7 +414,7 @@ const AddProducts = () => {
               />
               <label
                 htmlFor="image-upload"
-                className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md"
+                className="cursor-pointer bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-md transition-colors"
               >
                 Upload Images
               </label>
@@ -346,7 +431,7 @@ const AddProducts = () => {
                     />
                     <button
                       type="button"
-                      className="absolute top-1 right-1 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 bg-red-500 hover:bg-red-600 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                       onClick={() => removeImage(index)}
                     >
                       <Trash2 className="h-4 w-4" />
@@ -368,9 +453,13 @@ const AddProducts = () => {
               <input
                 type="number"
                 step="0.01"
-                className="w-full p-2 border border-gray-300 rounded-md"
+                min="0"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="180.00"
-                {...register('price', { required: true })}
+                {...register('price', { 
+                  required: 'Price is required',
+                  min: { value: 0, message: 'Price must be positive' }
+                })}
               />
             </div>
             
@@ -381,9 +470,12 @@ const AddProducts = () => {
                 min="0"
                 max="100"
                 step="1"
-                className="w-full p-2 border border-gray-300 rounded-md"
+                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
                 placeholder="30"
-                {...register('discount')}
+                {...register('discount', {
+                  min: { value: 0, message: 'Discount cannot be negative' },
+                  max: { value: 100, message: 'Discount cannot exceed 100%' }
+                })}
               />
               <p className="text-xs text-gray-500 mt-1">Leave empty for no discount</p>
             </div>
@@ -395,7 +487,7 @@ const AddProducts = () => {
           <h2 className="text-xl font-semibold mb-4">Promotion Plan</h2>
           
           <div className="space-y-3">
-            <label className="flex items-center space-x-3">
+            <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
               <input
                 type="radio"
                 className="text-indigo-600 focus:ring-indigo-500"
@@ -409,7 +501,7 @@ const AddProducts = () => {
             </label>
             
             {promotionPlans.map(plan => (
-              <label key={plan._id} className="flex items-center space-x-3">
+              <label key={plan._id} className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
                 <input
                   type="radio"
                   className="text-indigo-600 focus:ring-indigo-500"
@@ -429,21 +521,35 @@ const AddProducts = () => {
         <div className="flex justify-between pt-4 border-t border-gray-200">
           <button
             type="button"
-            className="px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
+            onClick={() => navigate('/products')}
           >
-            Save as Draft
+            Cancel
           </button>
           <button
             type="submit"
             disabled={isLoading}
-            className={`px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 ${
+            className={`px-6 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700 transition-colors ${
               isLoading ? 'opacity-70 cursor-not-allowed' : ''
             }`}
           >
-            {isLoading ? 'Processing...' : 'Add Product'}
+            {isLoading ? (
+              <span className="flex items-center">
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Processing...
+              </span>
+            ) : (
+              'Add Product'
+            )}
           </button>
         </div>
       </form>
+      
+      {/* Toast Container */}
+      <ToastContainer />
     </div>
   );
 };
