@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import { 
   Eye, 
   Check, 
@@ -42,6 +44,7 @@ const Approvals = () => {
     
     if (!token) {
       setError('You must be logged in to view applications.');
+      toast.error('You must be logged in to view applications.');
       setLoading(false);
       return;
     }
@@ -61,6 +64,7 @@ const Approvals = () => {
       
       if (response.status === 401) {
         setError('Session expired. Please log in again.');
+        toast.error('Session expired. Please log in again.');
         setLoading(false);
         return;
       }
@@ -97,9 +101,15 @@ const Approvals = () => {
       })).filter(app => app.status !== 'none'); // Filter out applications with 'none' status
       
       setApplications(transformedApplications);
+      
+      // Show success toast only when manually refreshing
+      if (applications.length > 0) {
+        toast.success('Applications refreshed successfully!');
+      }
     } catch (error) {
       console.error('Error fetching applications:', error);
       setError('Failed to load applications. Please try again.');
+      toast.error('Failed to load applications. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -111,6 +121,7 @@ const Approvals = () => {
     
     if (!token) {
       setError('You must be logged in to review applications.');
+      toast.error('You must be logged in to review applications.');
       return;
     }
 
@@ -140,6 +151,27 @@ const Approvals = () => {
         throw new Error('Failed to review application');
       }
 
+      // Show success toast based on action
+      if (action === 'approve') {
+        toast.success(`Application approved successfully! 🎉`, {
+          position: "top-right",
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      } else if (action === 'reject') {
+        toast.success(`Application rejected successfully.`, {
+          position: "top-right",
+          autoClose: 4000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+      }
+
       // Refresh applications list
       await fetchApplications();
       
@@ -150,6 +182,7 @@ const Approvals = () => {
     } catch (error) {
       console.error('Error reviewing application:', error);
       setError('Failed to review application. Please try again.');
+      toast.error('Failed to review application. Please try again.');
     } finally {
       setActionLoading(false);
     }
@@ -214,6 +247,22 @@ const Approvals = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100 p-6">
+      <ToastContainer
+        position="top-right"
+        autoClose={3000}
+        hideProgressBar={false}
+        newestOnTop={false}
+        closeOnClick
+        rtl={false}
+        pauseOnFocusLoss
+        draggable
+        pauseOnHover
+        theme="light"
+        toastStyle={{
+          fontFamily: 'inherit'
+        }}
+      />
+      
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -227,7 +276,10 @@ const Approvals = () => {
               </p>
             </div>
             <button
-              onClick={fetchApplications}
+              onClick={() => {
+                fetchApplications();
+                toast.info('Refreshing applications...');
+              }}
               disabled={loading}
               className="flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
             >

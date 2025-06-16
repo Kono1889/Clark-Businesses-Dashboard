@@ -184,27 +184,26 @@ const ApplicationCard = ({ application }) => {
     >
       <div className="flex items-center space-x-4">
         <div className="p-2 bg-gray-100 rounded-lg">
-          {getStatusIcon(application.sellerApplication.status)}
+          {getStatusIcon(application.status)}
         </div>
         <div>
-          <h4 className="font-medium text-gray-900">{application.username}</h4>
+          <h4 className="font-medium text-gray-900">{application.applicantName}</h4>
           <p className="text-sm text-gray-500">{application.email}</p>
-          {application.sellerApplication.storeTitle && (
+          {application.businessName && (
             <p className="text-xs text-amber-600 font-medium">
-              {application.sellerApplication.storeTitle}
+              {application.businessName}
             </p>
           )}
         </div>
       </div>
       <div className="flex items-center space-x-6">
-        <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(application.sellerApplication.status)}`}>
-          {application.sellerApplication.status === 'none' ? 'No Application' : application.sellerApplication.status}
+        <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(application.status)}`}>
+          {application.status === 'none' ? 'No Application' : application.status}
         </span>
         <div className="text-sm text-gray-500 text-right">
-          {application.sellerApplication.appliedAt && (
-            <p>{formatDate(application.sellerApplication.appliedAt)}</p>
+          {application.createdAt && (
+            <p>{formatDate(application.createdAt)}</p>
           )}
-          <p className="text-xs">{formatDate(application.createdAt)}</p>
         </div>
       </div>
     </motion.div>
@@ -241,13 +240,14 @@ const OverviewScreen = () => {
   const fetchDashboardData = async () => {
     setIsLoading(true);
     try {
-      // Using the token from your example
-      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MjRkYzI0OTRjZmUzNzViZjUwY2ZhZiIsImlhdCI6MTc0OTk4MzA5OSwiZXhwIjoxNzQ5OTg2Njk5fQ.VLo4RscjU2vsfqrYLP60La5hLCIk9qjiMGxd-Ep97tc";
+      // Get token from localStorage or use demo token
+      const token = localStorage.getItem('accessToken') || "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MjRkYzI0OTRjZmUzNzViZjUwY2ZhZiIsImlhdCI6MTc0OTk4MzA5OSwiZXhwIjoxNzQ5OTg2Njk5fQ.VLo4RscjU2vsfqrYLP60La5hLCIk9qjiMGxd-Ep97tc";
+      const refreshToken = localStorage.getItem('refreshToken') || 'demo-refresh-token';
       
       // Fetch all data concurrently
       await Promise.all([
-        fetchProducts(token),
-        fetchUsers(token)
+        fetchProducts(token, refreshToken),
+        fetchSellerApplications(token, refreshToken)
       ]);
       
     } catch (error) {
@@ -257,13 +257,14 @@ const OverviewScreen = () => {
     }
   };
 
-  const fetchProducts = async (token) => {
+  const fetchProducts = async (token, refreshToken) => {
     try {
       const response = await fetch('https://clark-backend.onrender.com/api/v1/products', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Cookie': `refreshToken=${refreshToken}`
         }
       });
 
@@ -317,160 +318,117 @@ const OverviewScreen = () => {
     }
   };
 
-  const fetchUsers = async (token) => {
+  const fetchSellerApplications = async (token, refreshToken) => {
     try {
-      const response = await fetch('https://clark-backend.onrender.com/api/v1/users', {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      // Use the same endpoint as the Approvals page
+      const myHeaders = new Headers();
+      myHeaders.append("Authorization", `Bearer ${token}`);
+      myHeaders.append("Cookie", `refreshToken=${refreshToken}`);
 
+      const requestOptions = {
+        method: "GET",
+        headers: myHeaders,
+        redirect: "follow"
+      };
+
+      const response = await fetch("https://clark-backend.onrender.com/api/v1/users/seller-applications", requestOptions);
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const data = await response.json();
-      console.log('Users API Response:', data);
+      const result = await response.json();
+      console.log('Seller Applications API Response:', result);
       
-      // Handle different possible response structures
-      let usersData = [];
-      if (data.data && data.data.users) {
-        usersData = data.data.users;
-      } else if (data.users) {
-        usersData = data.users;
-      } else if (Array.isArray(data)) {
-        usersData = data;
-      }
-
-      // Based on your API response example, the data is directly an array of users
-      // Each user has a sellerApplication object
-      const applicationsData = usersData.filter(user => 
-        user.sellerApplication && user.sellerApplication.status !== undefined
-      );
+      // Access the correct nested structure (same as Approvals page)
+      const applicationsData = result.data?.applications || [];
       
-      setApplications(applicationsData.slice(0, 5)); // Get latest 5 applications
+      // Transform the API data to match component's expected structure
+      const transformedApplications = applicationsData.map(app => ({
+        _id: app._id,
+        businessName: app.sellerApplication?.storeTitle || 'Unknown Business',
+        applicantName: app.username,
+        email: app.email,
+        phoneNumber: app.phone,
+        status: app.sellerApplication?.status || 'none',
+        createdAt: app.sellerApplication?.appliedAt || app.createdAt,
+        reviewedAt: app.sellerApplication?.reviewedAt
+      }));
 
-      // Calculate application stats
-      const totalUsers = usersData.length;
-      const sellers = usersData.filter(user => 
-        user.sellerApplication && user.sellerApplication.status === 'approved'
-      );
-      const pendingApps = usersData.filter(user => 
-        user.sellerApplication && user.sellerApplication.status === 'pending'
-      );
-      const approvedApps = sellers;
+      // Filter and set applications for display (latest 5)
+      const filteredApplications = transformedApplications.filter(app => app.status !== 'none');
+      setApplications(filteredApplications.slice(0, 5));
 
-      // Calculate application status distribution
-      const statusCounts = usersData.reduce((acc, user) => {
-        if (user.sellerApplication && user.sellerApplication.status) {
-          const status = user.sellerApplication.status;
-          acc[status] = (acc[status] || 0) + 1;
-        }
+      // Calculate application statistics
+      const totalUsers = applicationsData.length;
+      
+      // Count applications by status
+      const statusCounts = applicationsData.reduce((acc, app) => {
+        const status = app.sellerApplication?.status || 'none';
+        acc[status] = (acc[status] || 0) + 1;
         return acc;
       }, {});
 
+      const pendingApplications = statusCounts.pending || 0;
+      const approvedApplications = statusCounts.approved || 0;
+      const rejectedApplications = statusCounts.rejected || 0;
+      const noApplications = statusCounts.none || 0;
+
+      // Set application status data for chart
       setApplicationStatusData({
-        approved: statusCounts.approved || 0,
-        pending: statusCounts.pending || 0,
-        none: statusCounts.none || 0,
-        rejected: statusCounts.rejected || 0
+        approved: approvedApplications,
+        pending: pendingApplications,
+        none: noApplications,
+        rejected: rejectedApplications
       });
 
-      // Update stats
+      // Update dashboard stats
       setDashboardStats(prev => ({
         ...prev,
         totalUsers,
-        totalSellers: sellers.length,
-        pendingApplications: pendingApps.length,
-        approvedApplications: approvedApps.length
+        totalSellers: approvedApplications, // Only approved sellers count as active sellers
+        pendingApplications,
+        approvedApplications
       }));
 
     } catch (error) {
-      console.error('Error fetching users:', error);
-      // Set demo data based on your API response example
-      const demoUsers = [
+      console.error('Error fetching seller applications:', error);
+      
+      // Set demo data based on your API response example if API fails
+      const demoApplications = [
         {
           "_id": "683f14f7ada2864770514707",
-          "username": "Clark",
+          "applicantName": "Clark",
           "email": "clark@gmail.com",
-          "phone": "020000000",
-          "createdAt": "2025-06-03T15:29:59.211Z",
-          "sellerApplication": {
-            "status": "pending",
-            "appliedAt": "2025-06-03T15:39:09.274Z",
-            "businessLicense": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748965147/marketplace/dn6aasqexdvzbctsyx6g.png",
-            "idVerification": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748965148/marketplace/fm2klylgbkyuin3daqi8.jpg",
-            "storeBio": "we have quality products",
-            "storeTitle": "Clar Business"
-          }
+          "businessName": "Clar Business",
+          "status": "pending",
+          "createdAt": "2025-06-03T15:39:09.274Z"
         },
         {
           "_id": "6838f72da0f2bc4dc270b1b4",
-          "username": "dede",
+          "applicantName": "dede",
           "email": "jed@gmail.com",
-          "phone": "9999999999",
-          "createdAt": "2025-05-30T00:09:17.385Z",
-          "sellerApplication": {
-            "status": "approved",
-            "appliedAt": "2025-05-30T00:18:27.226Z",
-            "businessLicense": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748564306/marketplace/df4cdp7xkpfavngmyg7u.jpg",
-            "idVerification": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748564306/marketplace/mmfhlxz5akyieumf9bpu.jpg",
-            "storeBio": "quality goods",
-            "storeTitle": "Jed shop",
-            "adminNotes": "All documents verified. Good business plan.",
-            "reviewedAt": "2025-05-30T00:23:42.092Z"
-          }
-        },
-        {
-          "_id": "68306c7c52fff673411e30c0",
-          "username": "Esse Eghan",
-          "email": "esdacos0@gmail.com",
-          "phone": "0595789092",
-          "createdAt": "2025-05-23T12:39:24.997Z",
-          "sellerApplication": {
-            "status": "none"
-          }
-        },
-        {
-          "_id": "6838e65d3ad49d81334504c8",
-          "username": "Gerald Owus",
-          "email": "gerald@gmail.com",
-          "phone": "0535739092",
-          "createdAt": "2025-05-29T22:57:33.424Z",
-          "sellerApplication": {
-            "status": "approved",
-            "appliedAt": "2025-05-29T23:15:12.664Z",
-            "businessLicense": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748560513/marketplace/rgstyo0t7vey2b9nborb.jpg",
-            "idVerification": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748560513/marketplace/ueqcndbanffq3wtepvjg.jpg",
-            "storeBio": "We sell high-quality electronics and gadgets with excellent customer service.",
-            "storeTitle": "My Amazing Store",
-            "adminNotes": "All documents verified. Good business plan.",
-            "reviewedAt": "2025-05-29T23:27:30.363Z"
-          }
+          "businessName": "Jed shop",
+          "status": "approved",
+          "createdAt": "2025-05-30T00:18:27.226Z"
         }
       ];
 
-      setApplications(demoUsers);
-      
-      const totalUsers = demoUsers.length;
-      const sellers = demoUsers.filter(user => user.sellerApplication.status === 'approved');
-      const pendingApps = demoUsers.filter(user => user.sellerApplication.status === 'pending');
+      setApplications(demoApplications);
       
       setApplicationStatusData({
-        approved: 2,
+        approved: 1,
         pending: 1,
-        none: 1,
+        none: 0,
         rejected: 0
       });
 
       setDashboardStats(prev => ({
         ...prev,
-        totalUsers,
-        totalSellers: sellers.length,
-        pendingApplications: pendingApps.length,
-        approvedApplications: sellers.length
+        totalUsers: 4,
+        totalSellers: 1,
+        pendingApplications: 1,
+        approvedApplications: 1
       }));
     }
   };
