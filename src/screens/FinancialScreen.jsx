@@ -3,7 +3,7 @@ import React from 'react';
 const FinancialScreen = () => {
   return (
     <div>
-      Financial reports
+      Financial reports coming soon!!!!!!!
     </div>
   );
 }

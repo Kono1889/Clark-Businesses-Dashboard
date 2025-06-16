@@ -28,7 +28,7 @@ const AddProducts = () => {
 
         // Fetch categories
         const categoriesResponse = await axios.get(
-          'http://localhost:3000/api/v1/categories',
+          'https://clark-backend.onrender.com/api/v1/categories',
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -40,7 +40,7 @@ const AddProducts = () => {
 
         // Fetch promotion plans
         const promotionsResponse = await axios.get(
-          'http://localhost:3000/api/v1/promotions',
+          'https://clark-backend.onrender.com/api/v1/promotions',
           {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -94,7 +94,7 @@ const AddProducts = () => {
 
       // Update product with payment verification
       await axios.patch(
-        `http://localhost:3000/api/v1/products/${productId}/activate-promotion`,
+        `https://clark-backend.onrender.com/api/v1/products/${productId}/activate-promotion`,
         {
           paymentVerified: true,
           paymentStatus: 'completed'
@@ -146,7 +146,7 @@ const AddProducts = () => {
 
       // Delete the product since payment was cancelled
       await axios.delete(
-        `http://localhost:3000/api/v1/products/${productId}`,
+        `https://clark-backend.onrender.com/api/v1/products/${productId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`,
@@ -261,7 +261,7 @@ const AddProducts = () => {
 
       // Create the product first
       const response = await axios.post(
-        'http://localhost:3000/api/v1/products',
+        'https://clark-backend.onrender.com/api/v1/products',
         formData,
         {
           headers: {
@@ -281,7 +281,7 @@ const AddProducts = () => {
           localStorage.setItem('pendingProductId', productId);
 
           const paymentResponse = await axios.post(
-            'http://localhost:3000/api/v1/payments/initialize',
+            'https://clark-backend.onrender.com/api/v1/payments/initialize',
             {
               email: user.email,
               amount: selectedPlan.price,

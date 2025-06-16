@@ -229,12 +229,12 @@ ${reportData.users.map((user, index) =>
   // Show authentication error screen if not authenticated
   if (!isAuthenticated || !token) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
-        <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg border border-gray-700 p-8 rounded-xl text-center">
-          <div className="text-red-400 mb-4">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="bg-white border border-gray-300 shadow-lg p-8 rounded-xl text-center">
+          <div className="text-red-500 mb-4">
             <Shield size={48} className="mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Authentication Required</h2>
-            <p className="text-gray-300">You need to be logged in to access this page.</p>
+            <h2 className="text-2xl font-bold mb-2 text-gray-800">Authentication Required</h2>
+            <p className="text-gray-600">You need to be logged in to access this page.</p>
           </div>
           <button
             onClick={() => window.location.href = '/login'}
@@ -249,8 +249,8 @@ ${reportData.users.map((user, index) =>
 
   if (userLoading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 flex items-center justify-center">
-        <div className="flex items-center space-x-3 text-white">
+      <div className="min-h-screen bg-white flex items-center justify-center">
+        <div className="flex items-center space-x-3 text-gray-800">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-400"></div>
           <span className="text-lg">Loading users...</span>
         </div>
@@ -259,11 +259,11 @@ ${reportData.users.map((user, index) =>
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-purple-900 to-gray-900 p-6">
+    <div className="min-h-screen bg-white p-6">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold text-white">Customer Management</h1>
+          <h1 className="text-3xl font-bold text-gray-800">Customer Management</h1>
           <button
             onClick={generatePDFReport}
             className="flex items-center space-x-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-2 rounded-lg hover:from-purple-600 hover:to-pink-600 transition duration-300"
@@ -275,11 +275,11 @@ ${reportData.users.map((user, index) =>
 
         {/* Error Display */}
         {error && (
-          <div className="bg-red-500 bg-opacity-20 border border-red-500 text-red-400 p-4 rounded-lg mb-6">
+          <div className="bg-red-50 border border-red-200 text-red-600 p-4 rounded-lg mb-6">
             {error}
             <button 
               onClick={fetchUsers}
-              className="ml-4 text-red-300 hover:text-red-100 underline"
+              className="ml-4 text-red-500 hover:text-red-700 underline"
             >
               Retry
             </button>
@@ -296,14 +296,14 @@ ${reportData.users.map((user, index) =>
 
         {/* Charts */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-          <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg border border-gray-700 p-6 rounded-xl">
-            <h3 className="text-white font-semibold mb-4">User Roles Distribution</h3>
+          <div className="bg-white border border-gray-200 shadow-lg p-6 rounded-xl">
+            <h3 className="text-gray-800 font-semibold mb-4">User Roles Distribution</h3>
             <div className="h-64">
               <Pie data={roleData} options={{ maintainAspectRatio: false }} />
             </div>
           </div>
-          <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg border border-gray-700 p-6 rounded-xl">
-            <h3 className="text-white font-semibold mb-4">Seller vs Regular Users</h3>
+          <div className="bg-white border border-gray-200 shadow-lg p-6 rounded-xl">
+            <h3 className="text-gray-800 font-semibold mb-4">Seller vs Regular Users</h3>
             <div className="h-64">
               <Pie data={sellerData} options={{ maintainAspectRatio: false }} />
             </div>
@@ -311,14 +311,14 @@ ${reportData.users.map((user, index) =>
         </div>
 
         {/* Search and Filters */}
-        <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg border border-gray-700 p-6 rounded-xl mb-6">
+        <div className="bg-white border border-gray-200 shadow-lg p-6 rounded-xl mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="relative">
               <Search className="absolute left-3 top-3 text-gray-400" size={20} />
               <input
                 type="text"
                 placeholder="Search by name, email, or phone..."
-                className="w-full pl-10 pr-4 py-2 bg-gray-700 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:border-purple-500 focus:outline-none"
+                className="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 placeholder-gray-500 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
                 value={searchTerm}
                 onChange={(e) => {
                   setSearchTerm(e.target.value);
@@ -328,7 +328,7 @@ ${reportData.users.map((user, index) =>
             </div>
             
             <select 
-              className="p-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+              className="p-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
               value={roleFilter}
               onChange={(e) => {
                 setRoleFilter(e.target.value);
@@ -341,7 +341,7 @@ ${reportData.users.map((user, index) =>
             </select>
 
             <select 
-              className="p-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:border-purple-500 focus:outline-none"
+              className="p-2 bg-gray-50 border border-gray-300 rounded-lg text-gray-800 focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-200"
               value={sellerFilter}
               onChange={(e) => {
                 setSellerFilter(e.target.value);
@@ -356,20 +356,20 @@ ${reportData.users.map((user, index) =>
         </div>
 
         {/* Users Table */}
-        <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg border border-gray-700 rounded-xl overflow-hidden">
+        <div className="bg-white border border-gray-200 shadow-lg rounded-xl overflow-hidden">
           <div className="overflow-x-auto">
             <table className="min-w-full">
-              <thead className="bg-gray-700 bg-opacity-50">
+              <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">User</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Contact</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Role</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Status</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Joined</th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-300">Store</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">User</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Contact</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Role</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Status</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Joined</th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-gray-700">Store</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-700">
+              <tbody className="divide-y divide-gray-200">
                 {currentUsers.map(user => (
                   <UserTableRow key={user._id} user={user} />
                 ))}
@@ -378,7 +378,7 @@ ${reportData.users.map((user, index) =>
           </div>
           
           {filteredUsers.length === 0 && (
-            <div className="text-center py-8 text-gray-400">
+            <div className="text-center py-8 text-gray-500">
               No users found matching your criteria.
             </div>
           )}
@@ -387,14 +387,14 @@ ${reportData.users.map((user, index) =>
         {/* Pagination */}
         {totalPages > 1 && (
           <div className="flex justify-between items-center mt-6">
-            <div className="text-gray-400 text-sm">
+            <div className="text-gray-500 text-sm">
               Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length} users
             </div>
             <div className="flex space-x-2">
               <button
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
-                className="flex items-center px-3 py-2 bg-gray-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition duration-300"
+                className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition duration-300"
               >
                 <ChevronLeft size={16} />
                 Previous
@@ -408,7 +408,7 @@ ${reportData.users.map((user, index) =>
                     className={`px-3 py-2 rounded-lg transition duration-300 ${
                       currentPage === index + 1
                         ? 'bg-purple-600 text-white'
-                        : 'bg-gray-700 text-gray-300 hover:bg-gray-600'
+                        : 'bg-gray-100 text-gray-700 border border-gray-300 hover:bg-gray-200'
                     }`}
                   >
                     {index + 1}
@@ -419,7 +419,7 @@ ${reportData.users.map((user, index) =>
               <button
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
-                className="flex items-center px-3 py-2 bg-gray-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-600 transition duration-300"
+                className="flex items-center px-3 py-2 bg-gray-100 text-gray-700 border border-gray-300 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-200 transition duration-300"
               >
                 Next
                 <ChevronRight size={16} />
@@ -441,11 +441,11 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
   };
 
   return (
-    <div className="bg-gray-800 bg-opacity-50 backdrop-blur-lg border border-gray-700 p-6 rounded-xl">
+    <div className="bg-white border border-gray-200 shadow-lg p-6 rounded-xl">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-gray-400 text-sm font-medium">{title}</p>
-          <p className="text-3xl font-bold text-white mt-1">{value}</p>
+          <p className="text-gray-500 text-sm font-medium">{title}</p>
+          <p className="text-3xl font-bold text-gray-800 mt-1">{value}</p>
         </div>
         <div className={`p-3 rounded-lg bg-gradient-to-r ${colorClasses[color]}`}>
           <Icon className="text-white" size={24} />
@@ -456,7 +456,7 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
 };
 
 const UserTableRow = ({ user }) => (
-  <tr className="hover:bg-gray-700 hover:bg-opacity-30 transition duration-300">
+  <tr className="hover:bg-gray-50 transition duration-300">
     <td className="px-6 py-4">
       <div className="flex items-center">
         <div className="flex-shrink-0 h-10 w-10">
@@ -471,19 +471,19 @@ const UserTableRow = ({ user }) => (
           )}
         </div>
         <div className="ml-4">
-          <div className="text-sm font-medium text-white">{user.username || 'Unknown User'}</div>
+          <div className="text-sm font-medium text-gray-800">{user.username || 'Unknown User'}</div>
         </div>
       </div>
     </td>
     <td className="px-6 py-4">
-      <div className="text-sm text-gray-300">{user.email || 'N/A'}</div>
-      <div className="text-sm text-gray-400">{user.phone || 'N/A'}</div>
+      <div className="text-sm text-gray-600">{user.email || 'N/A'}</div>
+      <div className="text-sm text-gray-500">{user.phone || 'N/A'}</div>
     </td>
     <td className="px-6 py-4">
       <span className={`px-2 py-1 text-xs rounded-full font-medium ${
         user.role === 'admin' 
-          ? 'bg-purple-500 bg-opacity-20 text-purple-400 border border-purple-500' 
-          : 'bg-blue-500 bg-opacity-20 text-blue-400 border border-blue-500'
+          ? 'bg-purple-100 text-purple-700 border border-purple-200' 
+          : 'bg-blue-100 text-blue-700 border border-blue-200'
       }`}>
         {user.role || 'user'}
       </span>
@@ -491,30 +491,30 @@ const UserTableRow = ({ user }) => (
     <td className="px-6 py-4">
       <div className="flex flex-col space-y-1">
         {user.isSeller && (
-          <span className="px-2 py-1 text-xs rounded-full bg-green-500 bg-opacity-20 text-green-400 border border-green-500">
+          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-700 border border-green-200">
             Seller
           </span>
         )}
         {user.isVerified && (
-          <span className="px-2 py-1 text-xs rounded-full bg-yellow-500 bg-opacity-20 text-yellow-400 border border-yellow-500">
+          <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-700 border border-yellow-200">
             Verified
           </span>
         )}
         {!user.isSeller && !user.isVerified && (
-          <span className="px-2 py-1 text-xs rounded-full bg-gray-500 bg-opacity-20 text-gray-400 border border-gray-500">
+          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-600 border border-gray-200">
             Regular
           </span>
         )}
       </div>
     </td>
-    <td className="px-6 py-4 text-sm text-gray-300">
+    <td className="px-6 py-4 text-sm text-gray-600">
       {user.createdAt ? new Date(user.createdAt).toLocaleDateString() : 'N/A'}
     </td>
     <td className="px-6 py-4">
       {user.storeTitle ? (
         <div className="text-sm">
-          <div className="text-white font-medium">{user.storeTitle}</div>
-          <div className="text-gray-400 text-xs">{user.location || 'No location'}</div>
+          <div className="text-gray-800 font-medium">{user.storeTitle}</div>
+          <div className="text-gray-500 text-xs">{user.location || 'No location'}</div>
         </div>
       ) : (
         <span className="text-gray-500 text-sm">No store</span>

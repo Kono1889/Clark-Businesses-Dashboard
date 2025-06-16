@@ -1,4 +1,4 @@
-import { Route, Routes } from "react-router-dom";
+import { Route, Routes, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import AnalyticsScreen from "../screens/AnalyticsScreen";
 import CustomerManagementScreen from "../screens/CustomerManagementScreen";
@@ -9,8 +9,17 @@ import ProductScreen from "../screens/ProductScreen";
 import Layout from "../Layout/Layout";
 import CategoriesScreen from "../screens/CategoriesScreen";
 import PromoScreen from "../screens/PromoScreen";
-import AdminLogin from "../screens/Login";
+import Login from "../screens/Login";
 import AddProduct from "../screens/AddProduct";
+import AddCategory from "../screens/AddCategory";
+import AddPromo from "../screens/AddPromo";
+import Approvals from "../screens/Approvals";
+
+
+// Protected Route Component
+const ProtectedRoute = ({ children, isAuthenticated }) => {
+  return isAuthenticated ? children : <Navigate to="/" replace />;
+};
 
 const Routers = () => {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -67,26 +76,116 @@ const Routers = () => {
     );
   }
 
-  // If not authenticated, show login screen
-  if (!isAuthenticated) {
-    return <AdminLogin onLogin={handleLogin} />;
-  }
-
-  // If authenticated, show the main app
   return (
     <Routes>
       <Route path="/" element={<Layout onLogout={handleLogout} />}>
-        <Route index element={<OverviewScreen />} />
-        <Route path="/overview" element={<OverviewScreen />} />
-        <Route path="/customermanagement" element={<CustomerManagementScreen />} />
-        <Route path="/financialreport" element={<FinancialScreen />} />
-        <Route path="/orders" element={<OrdersScreen />} />
-        <Route path="/analytics" element={<AnalyticsScreen />} />
-        <Route path="/products" element={<ProductScreen />} />
-        <Route path="/categories" element={<CategoriesScreen />} />
-        <Route path="/promo" element={<PromoScreen />} />
-                <Route path="/add-product" element={<AddProduct />} />
-
+        {/* Public routes - Login page */}
+        <Route 
+          index 
+          element={
+            isAuthenticated ? 
+            <Navigate to="/overview" replace /> : 
+            <Login onLogin={handleLogin} />
+          } 
+        />
+        
+        {/* Protected routes - require authentication */}
+        <Route 
+          path="/overview" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <OverviewScreen />
+            </ProtectedRoute>
+          } 
+        />
+         <Route 
+          path="/approvals" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <Approvals />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/customermanagement" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <CustomerManagementScreen />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/financialreport" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <FinancialScreen />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/orders" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <OrdersScreen />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/analytics" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <AnalyticsScreen />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/products" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <ProductScreen />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/categories" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <CategoriesScreen />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/promo" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <PromoScreen />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/add-product" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <AddProduct />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/add-category" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <AddCategory />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/add-promo" 
+          element={
+            <ProtectedRoute isAuthenticated={isAuthenticated}>
+              <AddPromo />
+            </ProtectedRoute>
+          } 
+        />
       </Route>
     </Routes>
   );

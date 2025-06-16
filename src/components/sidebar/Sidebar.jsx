@@ -132,6 +132,15 @@ const Sidebar = ({ onToggle, onLogout }) => {
           activeHover={activeHover}
           id="customers"
         />
+          <SidebarItem
+          to="/approvals"
+          icon={User}
+          text="Approvals "
+          isOpen={isOpen}
+          setActiveHover={setActiveHover}
+          activeHover={activeHover}
+          id="approvals"
+        />
         <SidebarItem
           to="/products"
           icon={ShoppingBasket}
@@ -159,7 +168,7 @@ const Sidebar = ({ onToggle, onLogout }) => {
           activeHover={activeHover}
           id="promo"
         />
-        <SidebarItem
+        {/* <SidebarItem
           to="/financialreport"
           icon={Landmark}
           text="Financial Report"
@@ -167,7 +176,7 @@ const Sidebar = ({ onToggle, onLogout }) => {
           setActiveHover={setActiveHover}
           activeHover={activeHover}
           id="settings"
-        />
+        /> */}
       </nav>
 
       {/* Divider with animation */}

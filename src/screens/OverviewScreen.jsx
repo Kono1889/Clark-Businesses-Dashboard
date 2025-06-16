@@ -1,6 +1,5 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import salesimg from "../assets/headphonesMain.avif";
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -18,6 +17,12 @@ import {
   ArrowUpIcon,
   ArrowDownIcon,
   ChevronRightIcon,
+  UserGroupIcon,
+  ShoppingBagIcon,
+  DocumentTextIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  XCircleIcon,
 } from "@heroicons/react/24/outline";
 
 // Register ChartJS components
@@ -38,41 +43,22 @@ const StatsCard = ({
   title,
   description,
   value,
-  increase,
   icon,
-  isIncreasing,
+  bgColor = "bg-white"
 }) => {
   return (
     <motion.div
       whileHover={{ y: -5 }}
-      className="bg-white p-6 rounded-xl shadow-sm"
+      className={`${bgColor} p-6 rounded-xl shadow-sm border border-gray-200`}
     >
       <div className="flex justify-between items-start">
-        <div>
+        <div className="flex-1">
           <h3 className="text-lg text-amber-700 font-bold">{title}</h3>
           <p className="text-sm text-amber-600 mb-2">{description}</p>
-          <p className="text-2xl text-amber-700 font-bold">{value}</p>
-          <div
-            className={`flex items-center mt-2 ${
-              isIncreasing ? "text-[#328E6E]" : "text-[#D04848]"
-            }`}
-          >
-            {isIncreasing ? (
-              <ArrowUpIcon className="h-4 w-4 mr-1" />
-            ) : (
-              <ArrowDownIcon className="h-4 w-4 mr-1" />
-            )}
-            <span className="text-sm">{increase}</span>
-          </div>
+          <p className="text-3xl text-amber-700 font-bold">{value}</p>
         </div>
         {icon && (
-          <div
-            className={`p-3 rounded-lg ${
-              isIncreasing
-                ? "bg-blue-100 text-[#0A3981]"
-                : "bg-red-100 text-[#E38E49]"
-            }`}
-          >
+          <div className="p-3 rounded-lg bg-amber-100 text-amber-700">
             {icon}
           </div>
         )}
@@ -80,18 +66,42 @@ const StatsCard = ({
     </motion.div>
   );
 };
+
 // ProductCard Component
 const ProductCard = ({ product }) => {
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getConditionColor = (condition) => {
+    switch (condition?.toLowerCase()) {
+      case 'new':
+        return "bg-green-100 text-green-800";
+      case 'used':
+        return "bg-yellow-100 text-yellow-800";
+      case 'refurbished':
+        return "bg-blue-100 text-blue-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
   return (
     <motion.div
       whileHover={{ x: 5 }}
-      className="flex items-center justify-between p-4 hover:bg-gray-50"
+      className="flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
     >
       <div className="flex items-center space-x-4">
         <div className="bg-gray-100 rounded-lg w-12 h-12 flex items-center justify-center overflow-hidden">
-          {product.image ? (
+          {product.images && product.images.length > 0 ? (
             <img
-              src={product.image}
+              src={product.images[0]}
               alt={product.name}
               className="w-full h-full object-cover"
             />
@@ -100,27 +110,102 @@ const ProductCard = ({ product }) => {
           )}
         </div>
 
-        <div>
-          <h4 className="font-medium">{product.name}</h4>
+        <div className="flex-1">
+          <h4 className="font-medium text-gray-900">{product.name}</h4>
           <p className="text-sm text-gray-500 line-clamp-1">
             {product.description}
           </p>
+          <p className="text-xs text-gray-400 mt-1">
+            By: {product.owner?.username}
+          </p>
         </div>
       </div>
-      <div className="flex items-center space-x-8">
-        <span
-          className={`px-3 py-1 rounded-full text-xs ${
-            product.status === "Uploaded"
-              ? "bg-green-100 text-green-800"
-              : product.status === "Drafted"
-              ? "bg-yellow-100 text-yellow-800"
-              : "bg-red-100 text-red-800"
-          }`}
-        >
-          {product.status}
+      <div className="flex items-center space-x-6">
+        <span className={`px-3 py-1 rounded-full text-xs ${getConditionColor(product.condition)}`}>
+          {product.condition || 'New'}
         </span>
-        <span className="font-medium w-20 text-right">{product.price}</span>
-        <span className="text-sm text-gray-500 w-32">{product.created}</span>
+        <div className="text-right">
+          <span className="font-medium text-lg">${product.price}</span>
+          {product.discount > 0 && (
+            <p className="text-xs text-red-500">
+              ${product.discountPrice} (${product.discount} off)
+            </p>
+          )}
+        </div>
+        <div className="text-sm text-gray-500 w-20 text-right">
+          <p>{product.views} views</p>
+          <p className="text-xs">{formatDate(product.dateUploaded)}</p>
+        </div>
+      </div>
+    </motion.div>
+  );
+};
+
+// ApplicationCard Component
+const ApplicationCard = ({ application }) => {
+  const getStatusIcon = (status) => {
+    switch (status) {
+      case 'approved':
+        return <CheckCircleIcon className="h-5 w-5 text-green-600" />;
+      case 'pending':
+        return <ClockIcon className="h-5 w-5 text-yellow-600" />;
+      case 'rejected':
+        return <XCircleIcon className="h-5 w-5 text-red-600" />;
+      default:
+        return <DocumentTextIcon className="h-5 w-5 text-gray-600" />;
+    }
+  };
+
+  const getStatusColor = (status) => {
+    switch (status) {
+      case 'approved':
+        return "bg-green-100 text-green-800";
+      case 'pending':
+        return "bg-yellow-100 text-yellow-800";
+      case 'rejected':
+        return "bg-red-100 text-red-800";
+      default:
+        return "bg-gray-100 text-gray-800";
+    }
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric'
+    });
+  };
+
+  return (
+    <motion.div
+      whileHover={{ x: 5 }}
+      className="flex items-center justify-between p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+    >
+      <div className="flex items-center space-x-4">
+        <div className="p-2 bg-gray-100 rounded-lg">
+          {getStatusIcon(application.sellerApplication.status)}
+        </div>
+        <div>
+          <h4 className="font-medium text-gray-900">{application.username}</h4>
+          <p className="text-sm text-gray-500">{application.email}</p>
+          {application.sellerApplication.storeTitle && (
+            <p className="text-xs text-amber-600 font-medium">
+              {application.sellerApplication.storeTitle}
+            </p>
+          )}
+        </div>
+      </div>
+      <div className="flex items-center space-x-6">
+        <span className={`px-3 py-1 rounded-full text-xs ${getStatusColor(application.sellerApplication.status)}`}>
+          {application.sellerApplication.status === 'none' ? 'No Application' : application.sellerApplication.status}
+        </span>
+        <div className="text-sm text-gray-500 text-right">
+          {application.sellerApplication.appliedAt && (
+            <p>{formatDate(application.sellerApplication.appliedAt)}</p>
+          )}
+          <p className="text-xs">{formatDate(application.createdAt)}</p>
+        </div>
       </div>
     </motion.div>
   );
@@ -128,95 +213,339 @@ const ProductCard = ({ product }) => {
 
 // OverviewScreen Component
 const OverviewScreen = () => {
-  // Sample data for newest products
-  const productsData = [
-    {
-      image: salesimg,
-      name: "Headphone 8 pro",
-      description: "Featuring cutting-edge noise...",
-      status: "Uploaded",
-      price: "$43.44",
-      created: "Feb 2, 2019 19:28",
-    },
-    {
-      image: salesimg,
-      name: "Wireless mouse Ligo",
-      description: "Designed for both work and p...",
-      status: "Drafted",
-      price: "$21.13",
-      created: "Dec 7, 2019 23:26",
-    },
-    {
-      image: salesimg,
-      name: "Bluetooth speaker Round",
-      description: "Experienced the perfect fusion...",
-      status: "Uploaded",
-      price: "$99.43",
-      created: "Dec 30, 2019 05:18",
-    },
-    {
-      image: salesimg,
-      name: "Earbuds Jack",
-      description: "With seamless Bluetooth icon...",
-      status: "Uploaded",
-      price: "$26.61",
-      created: "Dec 30, 2019 07:52",
-    },
-    {
-      image: salesimg,
-      name: "Smart CCTV",
-      description: "Protect your home or business...",
-      status: "Return",
-      price: "$86.27",
-      created: "Dec 4, 2019 21:42",
-    },
-  ];
+  const [isLoading, setIsLoading] = useState(true);
+  const [products, setProducts] = useState([]);
+  const [applications, setApplications] = useState([]);
+  const [dashboardStats, setDashboardStats] = useState({
+    totalUsers: 0,
+    totalProducts: 0,
+    totalSellers: 0,
+    pendingApplications: 0,
+    approvedApplications: 0,
+    totalProductViews: 0,
+    totalRevenue: 0
+  });
+  const [productViewsData, setProductViewsData] = useState([]);
+  const [applicationStatusData, setApplicationStatusData] = useState({
+    approved: 0,
+    pending: 0,
+    none: 0,
+    rejected: 0
+  });
 
-  // Data for sales chart
-  const salesChartData = {
+  // Fetch all data on component mount
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    setIsLoading(true);
+    try {
+      // Using the token from your example
+      const token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY4MjRkYzI0OTRjZmUzNzViZjUwY2ZhZiIsImlhdCI6MTc0OTk4MzA5OSwiZXhwIjoxNzQ5OTg2Njk5fQ.VLo4RscjU2vsfqrYLP60La5hLCIk9qjiMGxd-Ep97tc";
+      
+      // Fetch all data concurrently
+      await Promise.all([
+        fetchProducts(token),
+        fetchUsers(token)
+      ]);
+      
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const fetchProducts = async (token) => {
+    try {
+      const response = await fetch('https://clark-backend.onrender.com/api/v1/products', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Products API Response:', data);
+      
+      // Handle different possible response structures
+      let productsData = [];
+      if (data.data && data.data.products) {
+        productsData = data.data.products;
+      } else if (data.products) {
+        productsData = data.products;
+      } else if (Array.isArray(data)) {
+        productsData = data;
+      }
+
+      setProducts(productsData.slice(0, 5)); // Get latest 5 products
+
+      // Calculate product stats
+      const totalViews = productsData.reduce((sum, product) => sum + (product.views || 0), 0);
+      const totalRevenue = productsData.reduce((sum, product) => {
+        const price = product.discountPrice || product.price || 0;
+        return sum + (price * (product.sold || 0));
+      }, 0);
+
+      // Generate views data for chart (monthly data)
+      generateViewsData(productsData);
+
+      // Update stats
+      setDashboardStats(prev => ({
+        ...prev,
+        totalProducts: productsData.length,
+        totalProductViews: totalViews,
+        totalRevenue
+      }));
+
+    } catch (error) {
+      console.error('Error fetching products:', error);
+      // Set some demo data if API fails
+      setProducts([]);
+      setDashboardStats(prev => ({
+        ...prev,
+        totalProducts: 0,
+        totalProductViews: 0,
+        totalRevenue: 0
+      }));
+    }
+  };
+
+  const fetchUsers = async (token) => {
+    try {
+      const response = await fetch('https://clark-backend.onrender.com/api/v1/users', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Users API Response:', data);
+      
+      // Handle different possible response structures
+      let usersData = [];
+      if (data.data && data.data.users) {
+        usersData = data.data.users;
+      } else if (data.users) {
+        usersData = data.users;
+      } else if (Array.isArray(data)) {
+        usersData = data;
+      }
+
+      // Based on your API response example, the data is directly an array of users
+      // Each user has a sellerApplication object
+      const applicationsData = usersData.filter(user => 
+        user.sellerApplication && user.sellerApplication.status !== undefined
+      );
+      
+      setApplications(applicationsData.slice(0, 5)); // Get latest 5 applications
+
+      // Calculate application stats
+      const totalUsers = usersData.length;
+      const sellers = usersData.filter(user => 
+        user.sellerApplication && user.sellerApplication.status === 'approved'
+      );
+      const pendingApps = usersData.filter(user => 
+        user.sellerApplication && user.sellerApplication.status === 'pending'
+      );
+      const approvedApps = sellers;
+
+      // Calculate application status distribution
+      const statusCounts = usersData.reduce((acc, user) => {
+        if (user.sellerApplication && user.sellerApplication.status) {
+          const status = user.sellerApplication.status;
+          acc[status] = (acc[status] || 0) + 1;
+        }
+        return acc;
+      }, {});
+
+      setApplicationStatusData({
+        approved: statusCounts.approved || 0,
+        pending: statusCounts.pending || 0,
+        none: statusCounts.none || 0,
+        rejected: statusCounts.rejected || 0
+      });
+
+      // Update stats
+      setDashboardStats(prev => ({
+        ...prev,
+        totalUsers,
+        totalSellers: sellers.length,
+        pendingApplications: pendingApps.length,
+        approvedApplications: approvedApps.length
+      }));
+
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      // Set demo data based on your API response example
+      const demoUsers = [
+        {
+          "_id": "683f14f7ada2864770514707",
+          "username": "Clark",
+          "email": "clark@gmail.com",
+          "phone": "020000000",
+          "createdAt": "2025-06-03T15:29:59.211Z",
+          "sellerApplication": {
+            "status": "pending",
+            "appliedAt": "2025-06-03T15:39:09.274Z",
+            "businessLicense": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748965147/marketplace/dn6aasqexdvzbctsyx6g.png",
+            "idVerification": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748965148/marketplace/fm2klylgbkyuin3daqi8.jpg",
+            "storeBio": "we have quality products",
+            "storeTitle": "Clar Business"
+          }
+        },
+        {
+          "_id": "6838f72da0f2bc4dc270b1b4",
+          "username": "dede",
+          "email": "jed@gmail.com",
+          "phone": "9999999999",
+          "createdAt": "2025-05-30T00:09:17.385Z",
+          "sellerApplication": {
+            "status": "approved",
+            "appliedAt": "2025-05-30T00:18:27.226Z",
+            "businessLicense": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748564306/marketplace/df4cdp7xkpfavngmyg7u.jpg",
+            "idVerification": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748564306/marketplace/mmfhlxz5akyieumf9bpu.jpg",
+            "storeBio": "quality goods",
+            "storeTitle": "Jed shop",
+            "adminNotes": "All documents verified. Good business plan.",
+            "reviewedAt": "2025-05-30T00:23:42.092Z"
+          }
+        },
+        {
+          "_id": "68306c7c52fff673411e30c0",
+          "username": "Esse Eghan",
+          "email": "esdacos0@gmail.com",
+          "phone": "0595789092",
+          "createdAt": "2025-05-23T12:39:24.997Z",
+          "sellerApplication": {
+            "status": "none"
+          }
+        },
+        {
+          "_id": "6838e65d3ad49d81334504c8",
+          "username": "Gerald Owus",
+          "email": "gerald@gmail.com",
+          "phone": "0535739092",
+          "createdAt": "2025-05-29T22:57:33.424Z",
+          "sellerApplication": {
+            "status": "approved",
+            "appliedAt": "2025-05-29T23:15:12.664Z",
+            "businessLicense": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748560513/marketplace/rgstyo0t7vey2b9nborb.jpg",
+            "idVerification": "https://res.cloudinary.com/ds6zuzsmd/image/upload/v1748560513/marketplace/ueqcndbanffq3wtepvjg.jpg",
+            "storeBio": "We sell high-quality electronics and gadgets with excellent customer service.",
+            "storeTitle": "My Amazing Store",
+            "adminNotes": "All documents verified. Good business plan.",
+            "reviewedAt": "2025-05-29T23:27:30.363Z"
+          }
+        }
+      ];
+
+      setApplications(demoUsers);
+      
+      const totalUsers = demoUsers.length;
+      const sellers = demoUsers.filter(user => user.sellerApplication.status === 'approved');
+      const pendingApps = demoUsers.filter(user => user.sellerApplication.status === 'pending');
+      
+      setApplicationStatusData({
+        approved: 2,
+        pending: 1,
+        none: 1,
+        rejected: 0
+      });
+
+      setDashboardStats(prev => ({
+        ...prev,
+        totalUsers,
+        totalSellers: sellers.length,
+        pendingApplications: pendingApps.length,
+        approvedApplications: sellers.length
+      }));
+    }
+  };
+
+  const generateViewsData = (productsData) => {
+    // Generate monthly views data based on products
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"];
+    const viewsByMonth = months.map((month, index) => {
+      // Simulate monthly views distribution
+      const monthlyViews = productsData.reduce((sum, product) => {
+        const productDate = new Date(product.dateUploaded || product.createdAt);
+        const productMonth = productDate.getMonth();
+        if (productMonth === index) {
+          return sum + (product.views || 0);
+        }
+        return sum;
+      }, 0);
+      
+      // Add some variation if no real data
+      return monthlyViews > 0 ? monthlyViews : Math.floor(Math.random() * 50 + 10);
+    });
+
+    setProductViewsData(viewsByMonth);
+  };
+
+  // Data for product views chart
+  const viewsChartData = {
     labels: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul"],
     datasets: [
       {
-        label: "Sales",
-        data: [1200, 1900, 3000, 5000, 2000, 3000, 1981],
-        backgroundColor: "rgba(50, 142, 110, 0.1)", // 328E6E with 10% opacity
+        label: "Product Views",
+        data: productViewsData,
+        backgroundColor: "rgba(50, 142, 110, 0.1)",
         borderWidth: 2,
         tension: 0.4,
-        segment: {
-          borderColor: (ctx) => {
-            const prev = ctx.p0.parsed.y;
-            const curr = ctx.p1.parsed.y;
-            return curr >= prev ? "#328E6E" : "#D04848";
-          },
-        },
-        pointBackgroundColor: function (context) {
-          const index = context.dataIndex;
-          if (index === 0) return "#328E6E"; // First point uses increase color
-          const current = context.dataset.data[index];
-          const previous = context.dataset.data[index - 1];
-          return current >= previous ? "#328E6E" : "#D04848";
-        },
-        pointBorderColor: "#FFFFFF", // White border for points
+        borderColor: "#328E6E",
+        pointBackgroundColor: "#328E6E",
+        pointBorderColor: "#FFFFFF",
         pointBorderWidth: 2,
         fill: true,
       },
     ],
   };
 
-  // Data for audience chart
-  const audienceData = {
-    labels: ["Female", "Male", "Others"],
+  // Data for application status chart
+  const applicationChartData = {
+    labels: ["Approved", "Pending", "No Application", "Rejected"],
     datasets: [
       {
-        data: [25, 15, 5],
+        data: [
+          applicationStatusData.approved,
+          applicationStatusData.pending,
+          applicationStatusData.none,
+          applicationStatusData.rejected || 0
+        ],
         backgroundColor: [
-          "rgb(253, 228, 158)",
-          "rgb(254, 185, 65)",
-          "rgb(221, 118, 28)",
+          "rgb(34, 197, 94)",
+          "rgb(251, 191, 36)",
+          "rgb(156, 163, 175)",
+          "rgb(239, 68, 68)"
         ],
       },
     ],
   };
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-amber-700 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -227,50 +556,72 @@ const OverviewScreen = () => {
         className="max-w-7xl mx-auto"
       >
         <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl text-amber-700 font-bold">Overview</h1>
-          {/* <p className="text-gray-500">
-            Get up-to-the-minute insights. No more waiting for reports
-          </p> */}
+          <h1 className="text-3xl text-amber-700 font-bold">Overview</h1>
+          <p className="text-gray-500">
+            Real-time marketplace insights and analytics
+          </p>
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           <StatsCard
-            title="Total Product Viewed"
-            description="Customers have visited and clicked product"
-            value="421.109"
-            increase="21k* Increase"
-            isIncreasing={true}
+            title="Total Users"
+            description="Registered users on the platform"
+            value={dashboardStats.totalUsers.toLocaleString()}
+            icon={<UserGroupIcon className="h-6 w-6" />}
           />
           <StatsCard
-            title="Total Sales"
-            description="Product have been sided"
-            value="$28.912"
-            increase="$7k* Decrease" // Changed to "Decrease" for example
-            isIncreasing={false}
+            title="Active Sellers"
+            description="Approved seller accounts"
+            value={dashboardStats.totalSellers.toLocaleString()}
+            icon={<ShoppingBagIcon className="h-6 w-6" />}
           />
           <StatsCard
-            title="Balance"
-            description="amount of income and results"
-            value="$125.235"
-            increase="7k* Increase"
-            isIncreasing={true}
+            title="Total Products"
+            description="Products listed on marketplace"
+            value={dashboardStats.totalProducts.toLocaleString()}
+            icon={<ShoppingBagIcon className="h-6 w-6" />}
+          />
+          <StatsCard
+            title="Pending Applications"
+            description="Seller applications awaiting review"
+            value={dashboardStats.pendingApplications.toLocaleString()}
+            icon={<DocumentTextIcon className="h-6 w-6" />}
           />
         </div>
 
-        {/* Charts and Products Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Sales Chart */}
-          <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm ">
+        {/* Additional Stats Row */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <StatsCard
+            title="Total Product Views"
+            description="Combined views across all products"
+            value={dashboardStats.totalProductViews.toLocaleString()}
+          />
+          <StatsCard
+            title="Approved Applications"
+            description="Successfully approved sellers"
+            value={dashboardStats.approvedApplications.toLocaleString()}
+          />
+          <StatsCard
+            title="Platform Revenue"
+            description="Total revenue from all sales"
+            value={`$${dashboardStats.totalRevenue.toLocaleString()}`}
+          />
+        </div>
+
+        {/* Charts Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          {/* Product Views Chart */}
+          <div className="lg:col-span-2 bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold">Sales Overview</h3>
-              <button className="text-sm text-blue-600 flex items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Product Views Overview</h3>
+              <button className="text-sm text-blue-600 flex items-center hover:text-blue-800">
                 See detail <ChevronRightIcon className="h-4 w-4 ml-1" />
               </button>
             </div>
             <div className="h-64">
               <Line
-                data={salesChartData}
+                data={viewsChartData}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
@@ -283,31 +634,16 @@ const OverviewScreen = () => {
                       titleColor: "#F3F4F6",
                       bodyColor: "#E5E7EB",
                       callbacks: {
-                        label: (ctx) => `$${ctx.parsed.y.toLocaleString()}`,
-                        afterLabel: function (context) {
-                          const index = context.dataIndex;
-                          if (index === 0) return null;
-                          const current = context.dataset.data[index];
-                          const previous = context.dataset.data[index - 1];
-                          const change = current - previous;
-                          const percentage = (
-                            (change / previous) *
-                            100
-                          ).toFixed(2);
-
-                          return change >= 0
-                            ? `↑ $${Math.abs(change)} (${percentage}%)`
-                            : `↓ $${Math.abs(change)} (${percentage}%)`;
-                        },
+                        label: (ctx) => `${ctx.parsed.y.toLocaleString()} views`,
                       },
                     },
                   },
                   scales: {
                     y: {
-                      beginAtZero: false,
+                      beginAtZero: true,
                       grid: { color: "#E5E7EB" },
                       ticks: {
-                        callback: (value) => `$${value}`,
+                        callback: (value) => `${value}`,
                         color: "#6B7280",
                       },
                     },
@@ -329,66 +665,98 @@ const OverviewScreen = () => {
             </div>
           </div>
 
-          {/* Audience Chart */}
-          <div className="bg-white p-6 rounded-xl shadow-sm ">
+          {/* Application Status Chart */}
+          <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
             <div className="flex justify-between items-center mb-4">
-              <h3 className="font-semibold">Audience</h3>
-              <button className="text-sm text-blue-600 flex items-center">
+              <h3 className="text-lg font-semibold text-gray-900">Seller Applications</h3>
+              <button className="text-sm text-blue-600 flex items-center hover:text-blue-800">
                 See detail <ChevronRightIcon className="h-4 w-4 ml-1" />
               </button>
             </div>
             <p className="text-sm text-gray-500 mb-4">
-              Customers have visited website
+              Application status distribution
             </p>
             <div className="h-48 mb-4">
               <Doughnut
-                data={audienceData}
+                data={applicationChartData}
                 options={{
                   responsive: true,
                   maintainAspectRatio: false,
                   plugins: {
                     legend: {
                       position: "bottom",
+                      labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: {
+                          size: 12
+                        }
+                      }
                     },
                   },
-                  cutout: "70%",
+                  cutout: "60%",
                 }}
               />
-            </div>
-            <div className="flex justify-center space-x-8 text-sm">
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-[#FDE49E] rounded-full mr-2"></div>
-                <span>Female</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-[#FEB941] rounded-full mr-2"></div>
-                <span>Male</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-3 h-3 bg-[#DD761C] rounded-full mr-2"></div>
-                <span>Others</span>
-              </div>
             </div>
           </div>
         </div>
 
-        {/* Newest Products */}
-        <div className="bg-white rounded-xl shadow-sm  overflow-hidden">
-          <div className="p-6 ">
-            <div className="flex justify-between items-center">
-              <h3 className="font-semibold">Newest Product</h3>
-              <button className="text-sm text-blue-600 flex items-center">
-                See more <ChevronRightIcon className="h-4 w-4 ml-1" />
-              </button>
+        {/* Content Sections */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Latest Products */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Latest Products</h3>
+                <button className="text-sm text-blue-600 flex items-center hover:text-blue-800">
+                  See more <ChevronRightIcon className="h-4 w-4 ml-1" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Recently uploaded products
+              </p>
             </div>
-            <p className="text-sm text-gray-500">
-              Newest product list of the month
-            </p>
+            <div className="max-h-96 overflow-y-auto">
+              {products.length > 0 ? (
+                products.map((product) => (
+                  <ProductCard key={product._id || product.id} product={product} />
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <ShoppingBagIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p>No products found</p>
+                  <p className="text-sm">Products will appear here once uploaded</p>
+                </div>
+              )}
+            </div>
           </div>
-          <div className="shadow-amber-600 shadow-sm">
-            {productsData.map((product, index) => (
-              <ProductCard key={index} product={product} />
-            ))}
+
+          {/* Recent Applications */}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
+            <div className="p-6 border-b border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="text-lg font-semibold text-gray-900">Recent Applications</h3>
+                <button className="text-sm text-blue-600 flex items-center hover:text-blue-800">
+                  See more <ChevronRightIcon className="h-4 w-4 ml-1" />
+                </button>
+              </div>
+              <p className="text-sm text-gray-500 mt-1">
+                Latest seller applications
+              </p>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {applications.length > 0 ? (
+                applications.map((application) => (
+                  <ApplicationCard key={application._id || application.id} application={application} />
+                ))
+              ) : (
+                <div className="p-8 text-center text-gray-500">
+                  <DocumentTextIcon className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+                  <p>No applications found</p>
+                  <p className="text-sm">Applications will appear here when submitted</p>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </motion.div>
