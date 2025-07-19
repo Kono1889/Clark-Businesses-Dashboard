@@ -7,9 +7,93 @@ import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import axios from 'axios';
 
+// Ghana regions and towns data
+const GHANA_LOCATIONS = [
+  {
+    "region": "Greater Accra",
+    "capital": "Accra",
+    "towns": ["Accra", "Tema", "Madina", "Teshie", "Nungua", "Dansoman", "Adenta", "Lapaz"]
+  },
+  {
+    "region": "Ashanti",
+    "capital": "Kumasi",
+    "towns": ["Kumasi", "Obuasi", "Ejisu", "Konongo", "Mampong", "Asante Bekwai", "Offinso"]
+  },
+  {
+    "region": "Eastern",
+    "capital": "Koforidua",
+    "towns": ["Koforidua", "Nkawkaw", "Akosombo", "Suhum", "Nsawam", "Akim Oda"]
+  },
+  {
+    "region": "Western",
+    "capital": "Sekondi-Takoradi",
+    "towns": ["Takoradi", "Sekondi", "Tarkwa", "Axim", "Shama", "Agona Nkwanta"]
+  },
+  {
+    "region": "Central",
+    "capital": "Cape Coast",
+    "towns": ["Cape Coast", "Kasoa", "Mankessim", "Winneba", "Elmina", "Assin Fosu"]
+  },
+  {
+    "region": "Volta",
+    "capital": "Ho",
+    "towns": ["Ho", "Aflao", "Keta", "Kpando", "Akatsi", "Anloga"]
+  },
+  {
+    "region": "Northern",
+    "capital": "Tamale",
+    "towns": ["Tamale", "Yendi", "Savelugu", "Gushegu", "Karaga", "Walewale"]
+  },
+  {
+    "region": "Upper East",
+    "capital": "Bolgatanga",
+    "towns": ["Bolgatanga", "Bawku", "Navrongo", "Zebilla", "Sandema"]
+  },
+  {
+    "region": "Upper West",
+    "capital": "Wa",
+    "towns": ["Wa", "Tumu", "Nadowli", "Lawra", "Jirapa"]
+  },
+  {
+    "region": "Bono",
+    "capital": "Sunyani",
+    "towns": ["Sunyani", "Berekum", "Dormaa Ahenkro", "Wenchi"]
+  },
+  {
+    "region": "Bono East",
+    "capital": "Techiman",
+    "towns": ["Techiman", "Kintampo", "Nkoranza", "Atebubu"]
+  },
+  {
+    "region": "Ahafo",
+    "capital": "Goaso",
+    "towns": ["Goaso", "Bechem", "Hwidiem", "Kenyasi"]
+  },
+  {
+    "region": "Oti",
+    "capital": "Dambai",
+    "towns": ["Dambai", "Krachi", "Nkwanta", "Jasikan"]
+  },
+  {
+    "region": "Savannah",
+    "capital": "Damongo",
+    "towns": ["Damongo", "Salaga", "Bole", "Sawla"]
+  },
+  {
+    "region": "North East",
+    "capital": "Nalerigu",
+    "towns": ["Nalerigu", "Walewale", "Chereponi", "Gambaga"]
+  },
+  {
+    "region": "Western North",
+    "capital": "Sefwi Wiawso",
+    "towns": ["Sefwi Wiawso", "Bibiani", "Juaboso", "Enchi"]
+  }
+];
+
 const AddProducts = () => {
   const { user, fetchUserProfile } = useAuth();
-  const { register, handleSubmit, control, setValue, watch } = useForm();
+  const { register, handleSubmit, control, setValue, watch, formState: { errors } } = useForm();
   const navigate = useNavigate();
   const [productImages, setProductImages] = useState([]);
   const [selectedSellingType, setSelectedSellingType] = useState('both');
@@ -179,6 +263,7 @@ const AddProducts = () => {
   };
 
   const onSubmit = async (data) => {
+    // Validate images
     if (productImages.length === 0) {
       toast.error('Please upload at least one product image', {
         position: "top-right",
@@ -218,6 +303,43 @@ const AddProducts = () => {
       }
     }
 
+    // Validate location fields
+    if (!data.region) {
+      toast.error('Please select a region', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
+    if (!data.town) {
+      toast.error('Please select a town', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
+    if (!data.specificAddress) {
+      toast.error('Please enter a specific address', {
+        position: "top-right",
+        autoClose: 3000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+      });
+      return;
+    }
+
     setIsLoading(true);
     setError('');
 
@@ -236,6 +358,22 @@ const AddProducts = () => {
       formData.append('categoryId', data.categoryId);
       formData.append('subcategory', data.subcategory);
       formData.append('condition', data.condition || 'new');
+      
+      // Append location data
+      formData.append('region', data.region);
+      formData.append('town', data.town);
+      formData.append('specificAddress', data.specificAddress);
+      
+      // Also append in location object format (backend might expect this structure)
+      formData.append('location[region]', data.region);
+      formData.append('location[town]', data.town);
+      formData.append('location[specificAddress]', data.specificAddress);
+      
+      // Find the selected region's capital
+      const selectedRegion = GHANA_LOCATIONS.find(loc => loc.region === data.region);
+      if (selectedRegion) {
+        formData.append('location[capital]', selectedRegion.capital);
+      }
       
       // Append optional discount (only if provided and not empty)
       if (data.discount && data.discount.trim() !== '') {
@@ -285,7 +423,7 @@ const AddProducts = () => {
             {
               email: user.email,
               amount: selectedPlan.price,
-              productId: productId, // Now we have the product ID
+              productId: productId,
               planType: selectedPromotion,
               callback_url: `${window.location.origin}${window.location.pathname}?payment=success&product_id=${productId}`,
               cancel_url: `${window.location.origin}${window.location.pathname}?payment=cancelled&product_id=${productId}`
@@ -335,7 +473,8 @@ const AddProducts = () => {
 
     } catch (err) {
       console.error('Error submitting product:', err);
-      toast.error(err.response?.data?.message || 'Failed to add product. Please try again.', {
+      const errorMessage = err.response?.data?.message || 'Failed to add product. Please try again.';
+      toast.error(errorMessage, {
         position: "top-right",
         autoClose: 4000,
         hideProgressBar: false,
@@ -358,6 +497,9 @@ const AddProducts = () => {
     setValue('quantity', '');
     setValue('discount', '');
     setValue('tags', '');
+    setValue('region', '');
+    setValue('town', '');
+    setValue('specificAddress', '');
     setSelectedPromotion('free');
   };
 
@@ -408,16 +550,28 @@ const AddProducts = () => {
     });
   };
 
+  // Handle region change and reset town
+  const handleRegionChange = (e) => {
+    const selectedRegion = e.target.value;
+    setValue('region', selectedRegion);
+    setValue('town', ''); // Reset town when region changes
+  };
+
   // Get subcategories for selected category
   const selectedCategoryId = watch('categoryId');
   const selectedCategory = categories.find(cat => cat._id === selectedCategoryId);
   const subcategories = selectedCategory?.subcategories || [];
 
+  // Get towns for selected region
+  const selectedRegion = watch('region');
+  const selectedLocationData = GHANA_LOCATIONS.find(loc => loc.region === selectedRegion);
+  const availableTowns = selectedLocationData?.towns || [];
+
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
       <h1 className="text-2xl font-bold mb-6">Product Management</h1>
       
-      {/* Error Messages (keeping for validation errors) */}
+      {/* Error Messages */}
       {error && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
           {error}
@@ -433,26 +587,38 @@ const AddProducts = () => {
             <label className="block text-sm font-medium text-gray-700 mb-1">Product Name*</label>
             <input
               type="text"
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                errors.productName ? 'border-red-500' : 'border-gray-300'
+              }`}
               placeholder="Full Spectrum CBD Tincture - Pet Tincture"
               {...register('productName', { required: 'Product name is required' })}
             />
+            {errors.productName && (
+              <span className="text-red-500 text-sm">{errors.productName.message}</span>
+            )}
           </div>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Business Description*</label>
             <textarea
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                errors.businessDescription ? 'border-red-500' : 'border-gray-300'
+              }`}
               rows={3}
               placeholder="We've partnered with Coastal Green Wellness based out of Myrtle Beach South Carolina"
               {...register('businessDescription', { required: 'Description is required' })}
             ></textarea>
+            {errors.businessDescription && (
+              <span className="text-red-500 text-sm">{errors.businessDescription.message}</span>
+            )}
           </div>
           
           <div className="mb-4">
             <label className="block text-sm font-medium text-gray-700 mb-1">Condition*</label>
             <select
-              className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+              className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                errors.condition ? 'border-red-500' : 'border-gray-300'
+              }`}
               {...register('condition', { required: 'Condition is required' })}
             >
               <option value="">Select condition</option>
@@ -460,6 +626,9 @@ const AddProducts = () => {
               <option value="used">Used</option>
               <option value="refurbished">Refurbished</option>
             </select>
+            {errors.condition && (
+              <span className="text-red-500 text-sm">{errors.condition.message}</span>
+            )}
           </div>
 
           <div className="mb-4">
@@ -474,6 +643,81 @@ const AddProducts = () => {
           </div>
         </section>
 
+        {/* Location Section - Enhanced */}
+        <section className="mb-8">
+          <h2 className="text-xl font-semibold mb-4">Location*</h2>
+          <p className="text-sm text-gray-600 mb-4">Please specify your product location to help customers find items near them.</p>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Region <span className="text-red-500">*</span>
+              </label>
+              <select
+                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.region ? 'border-red-500' : 'border-gray-300'
+                }`}
+                {...register('region', { required: 'Region is required' })}
+                onChange={handleRegionChange}
+              >
+                <option value="">Select a region</option>
+                {GHANA_LOCATIONS.map(location => (
+                  <option key={location.region} value={location.region}>
+                    {location.region}
+                  </option>
+                ))}
+              </select>
+              {errors.region && (
+                <span className="text-red-500 text-sm">{errors.region.message}</span>
+              )}
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Town <span className="text-red-500">*</span>
+              </label>
+              <select
+                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.town ? 'border-red-500' : 'border-gray-300'
+                }`}
+                {...register('town', { required: 'Town is required' })}
+                disabled={!selectedRegion}
+              >
+                <option value="">{selectedRegion ? 'Select a town' : 'Select region first'}</option>
+                {availableTowns.map((town, index) => (
+                  <option key={index} value={town}>
+                    {town}
+                  </option>
+                ))}
+              </select>
+              {errors.town && (
+                <span className="text-red-500 text-sm">{errors.town.message}</span>
+              )}
+              {!selectedRegion && (
+                <p className="text-xs text-gray-500 mt-1">Please select a region first</p>
+              )}
+            </div>
+          </div>
+
+          <div className="mb-4">
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Specific Address <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="text"
+              className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                errors.specificAddress ? 'border-red-500' : 'border-gray-300'
+              }`}
+              placeholder="123 Independence Avenue, Osu"
+              {...register('specificAddress', { required: 'Specific address is required' })}
+            />
+            {errors.specificAddress && (
+              <span className="text-red-500 text-sm">{errors.specificAddress.message}</span>
+            )}
+            <p className="text-xs text-gray-500 mt-1">Enter your detailed address (street, building, landmark, etc.)</p>
+          </div>
+        </section>
+
         {/* Category Section */}
         <section className="mb-8">
           <h2 className="text-xl font-semibold mb-4">Category*</h2>
@@ -482,7 +726,9 @@ const AddProducts = () => {
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Main Category</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.categoryId ? 'border-red-500' : 'border-gray-300'
+                }`}
                 {...register('categoryId', { required: 'Category is required' })}
               >
                 <option value="">Select a category</option>
@@ -492,12 +738,17 @@ const AddProducts = () => {
                   </option>
                 ))}
               </select>
+              {errors.categoryId && (
+                <span className="text-red-500 text-sm">{errors.categoryId.message}</span>
+              )}
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">Subcategory</label>
               <select
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.subcategory ? 'border-red-500' : 'border-gray-300'
+                }`}
                 {...register('subcategory', { required: 'Subcategory is required' })}
                 disabled={!selectedCategoryId}
               >
@@ -508,6 +759,9 @@ const AddProducts = () => {
                   </option>
                 ))}
               </select>
+              {errors.subcategory && (
+                <span className="text-red-500 text-sm">{errors.subcategory.message}</span>
+              )}
             </div>
           </div>
         </section>
@@ -570,13 +824,18 @@ const AddProducts = () => {
                 type="number"
                 step="0.01"
                 min="0"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.price ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="180.00"
                 {...register('price', { 
                   required: 'Price is required',
                   min: { value: 0, message: 'Price must be positive' }
                 })}
               />
+              {errors.price && (
+                <span className="text-red-500 text-sm">{errors.price.message}</span>
+              )}
             </div>
             
             <div>
@@ -586,13 +845,18 @@ const AddProducts = () => {
                 min="0"
                 max="100"
                 step="1"
-                className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"
+                className={`w-full p-2 border rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ${
+                  errors.discount ? 'border-red-500' : 'border-gray-300'
+                }`}
                 placeholder="30"
                 {...register('discount', {
                   min: { value: 0, message: 'Discount cannot be negative' },
                   max: { value: 100, message: 'Discount cannot exceed 100%' }
                 })}
               />
+              {errors.discount && (
+                <span className="text-red-500 text-sm">{errors.discount.message}</span>
+              )}
               <p className="text-xs text-gray-500 mt-1">Leave empty for no discount</p>
             </div>
           </div>
