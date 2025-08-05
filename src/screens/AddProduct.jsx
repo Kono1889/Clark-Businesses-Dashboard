@@ -10,84 +10,164 @@ import axios from 'axios';
 // Ghana regions and towns data
 const GHANA_LOCATIONS = [
   {
-    "region": "Greater Accra",
-    "capital": "Accra",
-    "towns": ["Accra", "Tema", "Madina", "Teshie", "Nungua", "Dansoman", "Adenta", "Lapaz"]
+    region: "Greater Accra",
+    capital: "Accra",
+    towns: [
+      "Accra Metropolitan", "Achimota", "Adabraka", "Aderita", "Tema Metropolitan", 
+      "Abelemixpe", "Bahana Im", "Ablekuma", "Bubuashie", "Ashalman Municipal", 
+      "Ashaley Bowe", "Ashomang Estate", "Asylum Down", "Averor Area", "Awoshe", 
+      "Banana Im", "Ga East Municipal", "Ga South Municipal", "Ga West Municipal", 
+      "Gbowe", "Haatso", "James Town", "Kaneshie", "Kasoa", "Abbdobi", 
+      "Abossey Okai", "Accra New Town", "Adjiriganor", "Agbogba", "Agbogbloshie", 
+      "Agbogloshie", "Airport Residential Area", "Akweteyman", "Alajo", "Aryaa", 
+      "Darfia", "Dansoman", "Darkuman", "Dodowa", "Dome", "Dworwulu", "Dzorwulu", 
+      "Fast Lenon", "Labone", "Lapaz", "Lartelokorshie", "Lartelokoshie", 
+      "Ledzokuku-Krowor", "Little Legon", "Madina", "Mamobi", "Cantonments", 
+      "Chorkor", "Circle", "Control", "Danfa", "Korie Gonno", "Kotobabi", 
+      "Kwashieman", "Labadi", "Korle Gomo", "Kokomleme"
+    ]
   },
   {
-    "region": "Ashanti",
-    "capital": "Kumasi",
-    "towns": ["Kumasi", "Obuasi", "Ejisu", "Konongo", "Mampong", "Asante Bekwai", "Offinso"]
+    region: "Eastern",
+    capital: "Koforidua",
+    towns: [
+      "Akuapim South", "Asuogyaman", "East Akim Municipal", "New-Juaben Municipal", 
+      "Akuapim North", "Akyemansa", "Atiwa", "Ayensuano", "Birim Central Municipal", 
+      "Birim North", "Birim South", "Denkyembour", "Fanteakwa", "Kwaebibirem", 
+      "Kwahu Afram Plains North", "Kwahu Afram Plains South", "Kwahu East", 
+      "Kwahu South", "Kwahu West", "Lower Manya Krobo", "Suhum/Kraboa/Coaltar", 
+      "Upper Manya Krobo", "Upper West Akim", "West Akim Municipal", "Yilo Krobo"
+    ]
   },
   {
-    "region": "Eastern",
-    "capital": "Koforidua",
-    "towns": ["Koforidua", "Nkawkaw", "Akosombo", "Suhum", "Nsawam", "Akim Oda"]
+    region: "Ashanti",
+    capital: "Kumasi",
+    towns: [
+      "Kumasi Metropolitan", "Atwima Kwanwoma", "Atwima Nwablagna", 
+      "Ejisu-Juaben Municipal", "Kwabre", "Adansi North", "Adansi South", 
+      "Afiqya-Kwabre", "Ahafo Ano North", "Ahafo Ano South", "Amansie Central", 
+      "Amansie West", "Asante Akim Central Municipal", "Asante Akim North", 
+      "Asante Akim South", "Asokore Mampong Municipal", "Atwima Mponua", 
+      "Bekwal Municipal", "Bosome Freho", "Bosomwe", "Ejura/Sekyedumase", 
+      "Mampong Municipal", "Obussi Municipal", "OffInso Municipal", "OffInso North", 
+      "Sekyere Afram Plains", "Sekyere Central", "Sekyere East", "Sekyere Kumawu", 
+      "Sekyere South"
+    ]
   },
   {
-    "region": "Western",
-    "capital": "Sekondi-Takoradi",
-    "towns": ["Takoradi", "Sekondi", "Tarkwa", "Axim", "Shama", "Agona Nkwanta"]
+    region: "Western",
+    capital: "Sekondi-Takoradi",
+    towns: [
+      "Takoradi", "Ahanta West", "Shama Ahanta East Metropolitan", "Wassa West", 
+      "Jomoro", "Mpohor/Wassa East", "Nzema East Prestea-Huni Valley", 
+      "Tarkwa Nsuaem", "Wasa Amenfi East", "Wasa Amenfi West"
+    ]
   },
   {
-    "region": "Central",
-    "capital": "Cape Coast",
-    "towns": ["Cape Coast", "Kasoa", "Mankessim", "Winneba", "Elmina", "Assin Fosu"]
+    region: "Western North",
+    capital: "Sefwi Wiawso",
+    towns: [
+      "Aowin/Suaman Bia", "Bibiani/Anhwiaso/Bekwai", "Juabeso", "Sefwi-Wiawso"
+    ]
   },
   {
-    "region": "Volta",
-    "capital": "Ho",
-    "towns": ["Ho", "Aflao", "Keta", "Kpando", "Akatsi", "Anloga"]
+    region: "Central",
+    capital: "Cape Coast",
+    towns: [
+      "Awutu Senya East Municipal", "Cape Coast Metropolitan", "Effutu Municipal", 
+      "Gomoa East", "Abura/Asebu/Kwamankese", "Agona East", "Agona West Municipal", 
+      "Alumako/Enyan/Essiam", "Asikuma/Odoben/Brakwa", "Assin North Municipal", 
+      "Assin South", "Awutu Senya West", "Ekumfi", "Gomoa West", 
+      "Komenda/Edina/Eguafo/Abitem Municipal", "Mfantsiman Municipal", "Potsin", 
+      "Twifo-Ati Morkwa", "Twifo/Heman/Lower Denkyira", "Upper Denkyira East", 
+      "Upper Denkyira West"
+    ]
   },
   {
-    "region": "Northern",
-    "capital": "Tamale",
-    "towns": ["Tamale", "Yendi", "Savelugu", "Gushegu", "Karaga", "Walewale"]
+    region: "Volta",
+    capital: "Ho",
+    towns: [
+      "Ho Municipal", "Hohoe Municipal", "Keta Municipal", "Ketu South Municipal", 
+      "Kpando Municipal", "Adaklu", "Afadjato South", "Agotime Ziope", 
+      "Akatsi North", "Akatsi South", "Blakoye", "Central Tongu", "Ho West", 
+      "Jasikan", "Kadjebi", "Ketu North Municipal", "North Dayi", "North Tongu", 
+      "South Dayi", "South Tongu"
+    ]
   },
   {
-    "region": "Upper East",
-    "capital": "Bolgatanga",
-    "towns": ["Bolgatanga", "Bawku", "Navrongo", "Zebilla", "Sandema"]
+    region: "Oti",
+    capital: "Dambai",
+    towns: [
+      "Krachi East", "Krachi Nchumuru", "Krachi West", "Nkwanta North", 
+      "Nkwanta South"
+    ]
   },
   {
-    "region": "Upper West",
-    "capital": "Wa",
-    "towns": ["Wa", "Tumu", "Nadowli", "Lawra", "Jirapa"]
+    region: "Bono",
+    capital: "Sunyani",
+    towns: [
+      "Sunyani Municipal", "Berekum Municipal", "Dormaa East", "Dormaa Municipal", 
+      "Dormaa West", "Jaman North", "Jaman South", "Sunyani West", "Tain", 
+      "Tano North", "Tano South", "Wenchi Municipal"
+    ]
   },
   {
-    "region": "Bono",
-    "capital": "Sunyani",
-    "towns": ["Sunyani", "Berekum", "Dormaa Ahenkro", "Wenchi"]
+    region: "Bono East",
+    capital: "Techiman",
+    towns: [
+      "Atebubu-Amantin", "Techiman Municipal", "Kintampo North Municipal", 
+      "Kintampo South", "Nkoranza North", "Nkoranza South", "Pru", "Sene East", 
+      "Sene West", "Techiman South"
+    ]
   },
   {
-    "region": "Bono East",
-    "capital": "Techiman",
-    "towns": ["Techiman", "Kintampo", "Nkoranza", "Atebubu"]
+    region: "Ahafo",
+    capital: "Goaso",
+    towns: [
+      "Asunafo North Municipal", "Asunafo South", "Asutifi North", "Asutifi South"
+    ]
   },
   {
-    "region": "Ahafo",
-    "capital": "Goaso",
-    "towns": ["Goaso", "Bechem", "Hwidiem", "Kenyasi"]
+    region: "Northern",
+    capital: "Tamale",
+    towns: [
+      "Tamale Municipal", "Gushegu", "Karaga", "Kpandai", "Nanumba North", 
+      "Nanumba South", "Saboba", "Savelugu-Nanton", "Tolon/Kumbungu", 
+      "Yendi", "Zabzugu/Tatale", "Bunkpurugu-Yunyoo", "Chereponi", 
+      "East Mamprusi"
+    ]
   },
   {
-    "region": "Oti",
-    "capital": "Dambai",
-    "towns": ["Dambai", "Krachi", "Nkwanta", "Jasikan"]
+    region: "Savannah",
+    capital: "Damongo",
+    towns: [
+      "Sawla-Tuna-Kalba", "West Gonja", "Bole", "Central Gonja", "East Gonja"
+    ]
   },
   {
-    "region": "Savannah",
-    "capital": "Damongo",
-    "towns": ["Damongo", "Salaga", "Bole", "Sawla"]
+    region: "North East",
+    capital: "Nalerigu",
+    towns: [
+      "West Mamprusi"
+    ]
   },
   {
-    "region": "North East",
-    "capital": "Nalerigu",
-    "towns": ["Nalerigu", "Walewale", "Chereponi", "Gambaga"]
+    region: "Upper East",
+    capital: "Bolgatanga",
+    towns: [
+      "Bawku Municipal", "Bolgatanga Municipal", "Bawku West", "Bongo District", 
+      "Bulsa", "Garu-Tempane", "Kassena Nankana East", "Kassena Nankana West", 
+      "Talensi-Nabdam"
+    ]
   },
   {
-    "region": "Western North",
-    "capital": "Sefwi Wiawso",
-    "towns": ["Sefwi Wiawso", "Bibiani", "Juaboso", "Enchi"]
+    region: "Upper West",
+    capital: "Wa",
+    towns: [
+      "Wa Municipal District", "Jirapa/Lambussie District", "Lawra District", 
+      "Nadowli District", "Sissala East District", "Wa East District", 
+      "Wa West District"
+    ]
   }
 ];
 
