@@ -18,7 +18,7 @@ import Approvals from "../screens/Approvals";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, isAuthenticated }) => {
-  return isAuthenticated ? children : <Navigate to="/login" replace />;
+  return isAuthenticated ? children : <Navigate to="/" replace />;
 };
 
 const Routers = () => {
@@ -31,7 +31,7 @@ const Routers = () => {
       const sessionToken = sessionStorage.getItem('authToken');
       const localToken = localStorage.getItem('accessToken');
       const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-      
+
       if (sessionToken || (localToken && isLoggedIn)) {
         setIsAuthenticated(true);
       }
@@ -79,26 +79,26 @@ const Routers = () => {
   return (
     <Routes>
       <Route path="/" element={<Layout onLogout={handleLogout} />}>
-        {/* Root route - redirects to overview if authenticated, login if not */}
+        {/* Public routes - Login page */}
         <Route 
           index 
           element={
             isAuthenticated ? 
-            <OverviewScreen /> : 
-            <Navigate to="/login" replace />
-          } 
-        />
-        
-        {/* Login route */}
-        <Route 
-          path="/login" 
-          element={
-            isAuthenticated ? 
-            <Navigate to="/" replace /> : 
+            <Navigate to="/overview" replace /> : 
+
+
+
+
+
+
+
+
+
+
             <Login onLogin={handleLogin} />
           } 
         />
-        
+
         {/* Protected routes - require authentication */}
         <Route 
           path="/overview" 
@@ -200,5 +200,6 @@ const Routers = () => {
     </Routes>
   );
 };
+
 
 export default Routers;
