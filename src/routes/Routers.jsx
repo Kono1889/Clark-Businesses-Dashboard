@@ -18,7 +18,7 @@ import Approvals from "../screens/Approvals";
 
 // Protected Route Component
 const ProtectedRoute = ({ children, isAuthenticated }) => {
-  return isAuthenticated ? children : <Navigate to="/" replace />;
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
 const Routers = () => {
@@ -79,12 +79,22 @@ const Routers = () => {
   return (
     <Routes>
       <Route path="/" element={<Layout onLogout={handleLogout} />}>
-        {/* Public routes - Login page */}
+        {/* Root route - redirects to overview if authenticated, login if not */}
         <Route 
           index 
           element={
             isAuthenticated ? 
-            <Navigate to="/overview" replace /> : 
+            <OverviewScreen /> : 
+            <Navigate to="/login" replace />
+          } 
+        />
+        
+        {/* Login route */}
+        <Route 
+          path="/login" 
+          element={
+            isAuthenticated ? 
+            <Navigate to="/" replace /> : 
             <Login onLogin={handleLogin} />
           } 
         />
