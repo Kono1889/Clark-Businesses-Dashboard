@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
-import { ChevronDown, Plus, Trash2, Upload } from 'lucide-react';
+import { ChevronDown, Plus, Trash2, Upload, CreditCard, CheckCircle, AlertCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -182,6 +182,12 @@ const AddProducts = () => {
   const [selectedPromotion, setSelectedPromotion] = useState('free');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  
+  // Payment flow states
+  const [paymentStep, setPaymentStep] = useState('form'); // 'form', 'payment_processing', 'payment_success'
+  const [paymentData, setPaymentData] = useState(null);
+  const [paymentReference, setPaymentReference] = useState(null);
+  const [isCheckingPayment, setIsCheckingPayment] = useState(false);
 
   // Fetch categories and promotion plans on component mount
   useEffect(() => {
@@ -195,8 +201,7 @@ const AddProducts = () => {
           'https://clark-backend.onrender.com/api/v1/categories',
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Cookie': `refreshToken=${localStorage.getItem('refreshToken')}`
+              'Authorization': `Bearer ${token}`
             }
           }
         );
@@ -204,11 +209,10 @@ const AddProducts = () => {
 
         // Fetch promotion plans
         const promotionsResponse = await axios.get(
-          'https://clark-backend.onrender.com/api/v1/promotions',
+          'https://clark-backend.onrender.com/api/v1/payments/promotion-plans',
           {
             headers: {
-              'Authorization': `Bearer ${token}`,
-              'Cookie': `refreshToken=${localStorage.getItem('refreshToken')}`
+              'Authorization': `Bearer ${token}`
             }
           }
         );
@@ -229,118 +233,75 @@ const AddProducts = () => {
     fetchData();
   }, []);
 
-  // Check for payment success on component mount (when returning from payment)
+  // Check payment status periodically when payment is processing
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const paymentStatus = urlParams.get('payment');
-    const productId = urlParams.get('product_id') || localStorage.getItem('pendingProductId');
-
-    if (paymentStatus === 'success' && productId) {
-      handlePaymentSuccess(productId);
-      localStorage.removeItem('pendingProductId');
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    } else if (paymentStatus === 'cancelled' && productId) {
-      handlePaymentCancellation(productId);
-      localStorage.removeItem('pendingProductId');
-      // Clean URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
-
-  const handlePaymentSuccess = async (productId) => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('Not authenticated');
-      }
-
-      // Update product with payment verification
-      await axios.patch(
-        `https://clark-backend.onrender.com/api/v1/products/${productId}/activate-promotion`,
-        {
-          paymentVerified: true,
-          paymentStatus: 'completed'
-        },
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'application/json',
+    let intervalId;
+    
+    if (paymentReference && paymentStep === 'payment_processing') {
+      const checkPaymentStatus = async () => {
+        try {
+          setIsCheckingPayment(true);
+          const token = localStorage.getItem('accessToken');
+          
+          const response = await axios.get(
+            `https://clark-backend.onrender.com/api/v1/payments/check-status/${paymentReference}`,
+            {
+              headers: {
+                'Authorization': `Bearer ${token}`
+              }
+            }
+          );
+          
+          const status = response.data.status;
+          
+          if (status === 'success' || status === 'completed') {
+            setPaymentStep('payment_success');
+            toast.success('Payment successful! Your product is now live with premium promotion.', {
+              position: "top-right",
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+            });
+            clearInterval(intervalId);
+            
+            // Navigate to products page after success
+            setTimeout(() => {
+              navigate('/vendordashboard/productsmanagement');
+            }, 3000);
+          } else if (status === 'failed' || status === 'cancelled') {
+            setPaymentStep('form');
+            setPaymentReference(null);
+            setPaymentData(null);
+            toast.error('Payment failed or was cancelled. Please try again.', {
+              position: "top-right",
+              autoClose: 4000,
+              hideProgressBar: false,
+              closeOnClick: true,
+              pauseOnHover: true,
+              draggable: true,
+            });
+            clearInterval(intervalId);
           }
+        } catch (err) {
+          console.error('Error checking payment status:', err);
+        } finally {
+          setIsCheckingPayment(false);
         }
-      );
-
-      toast.success('Payment successful! Your product is now live with premium promotion.', {
-        position: "top-right",
-        autoClose: 4000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-
-      // Navigate to products page after a short delay
-      setTimeout(() => {
-        navigate('/products');
-      }, 2000);
-
-    } catch (err) {
-      console.error('Error activating promotion after payment:', err);
-      toast.error('Payment successful but failed to activate promotion. Please contact support.', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-    } finally {
-      setIsLoading(false);
+      };
+      
+      // Check immediately, then every 3 seconds
+      checkPaymentStatus();
+      intervalId = setInterval(checkPaymentStatus, 3000);
     }
-  };
-
-  const handlePaymentCancellation = async (productId) => {
-    setIsLoading(true);
-    try {
-      const token = localStorage.getItem('accessToken');
-      if (!token) {
-        throw new Error('Not authenticated');
+    
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
       }
-
-      // Delete the product since payment was cancelled
-      await axios.delete(
-        `https://clark-backend.onrender.com/api/v1/products/${productId}`,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          }
-        }
-      );
-
-      toast.error('Payment was cancelled. Product has been removed.', {
-        position: "top-right",
-        autoClose: 4000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-
-    } catch (err) {
-      console.error('Error removing product after payment cancellation:', err);
-      toast.warning('Payment cancelled. Please check your products and contact support if needed.', {
-        position: "top-right",
-        autoClose: 5000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    };
+  }, [paymentReference, paymentStep, navigate]);
 
   const onSubmit = async (data) => {
     // Validate images
@@ -439,21 +400,10 @@ const AddProducts = () => {
       formData.append('subcategory', data.subcategory);
       formData.append('condition', data.condition || 'new');
       
-      // Append location data
+      // Append location data (simple format)
       formData.append('region', data.region);
       formData.append('town', data.town);
       formData.append('specificAddress', data.specificAddress);
-      
-      // Also append in location object format (backend might expect this structure)
-      formData.append('location[region]', data.region);
-      formData.append('location[town]', data.town);
-      formData.append('location[specificAddress]', data.specificAddress);
-      
-      // Find the selected region's capital
-      const selectedRegion = GHANA_LOCATIONS.find(loc => loc.region === data.region);
-      if (selectedRegion) {
-        formData.append('location[capital]', selectedRegion.capital);
-      }
       
       // Append optional discount (only if provided and not empty)
       if (data.discount && data.discount.trim() !== '') {
@@ -470,89 +420,83 @@ const AddProducts = () => {
         formData.append('images', image);
       });
 
-      // For premium plans, mark as pending payment
-      if (selectedPromotion !== 'free') {
-        formData.append('promotionPlan[type]', selectedPromotion);
-        formData.append('promotionPlan[paymentStatus]', 'pending');
-        formData.append('status', 'draft'); // Keep as draft until payment
-      }
-
-      // Create the product first
-      const response = await axios.post(
-        'https://clark-backend.onrender.com/api/v1/products',
-        formData,
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`,
-            'Content-Type': 'multipart/form-data',
-          }
-        }
-      );
-
-      const productId = response.data.data.product._id;
-
-      // If premium plan selected, redirect to payment
-      if (selectedPromotion !== 'free') {
-        const selectedPlan = promotionPlans.find(plan => plan.type === selectedPromotion);
-        if (selectedPlan) {
-          // Store product ID for after payment
-          localStorage.setItem('pendingProductId', productId);
-
-          const paymentResponse = await axios.post(
-            'https://clark-backend.onrender.com/api/v1/payments/initialize',
-            {
-              email: user.email,
-              amount: selectedPlan.price,
-              productId: productId,
-              planType: selectedPromotion,
-              callback_url: `${window.location.origin}${window.location.pathname}?payment=success&product_id=${productId}`,
-              cancel_url: `${window.location.origin}${window.location.pathname}?payment=cancelled&product_id=${productId}`
-            },
-            {
-              headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json'
-              }
+      if (selectedPromotion === 'free') {
+        // For free plans, use the original endpoint
+        const response = await axios.post(
+          'https://clark-backend.onrender.com/api/v1/products',
+          formData,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
             }
-          );
-          
-          toast.info('Product created! Redirecting to payment to activate promotion...', {
-            position: "top-right",
-            autoClose: 3000,
-            hideProgressBar: false,
-            closeOnClick: true,
-            pauseOnHover: true,
-            draggable: true,
-          });
-          
-          // Redirect to payment URL after a short delay
-          setTimeout(() => {
-            window.location.href = paymentResponse.data.data.authorization_url;
-          }, 3000);
-          return;
+          }
+        );
+
+        toast.success('Product added successfully!', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+        
+        // Reset form
+        resetForm();
+
+        // Navigate to products page after a short delay
+        setTimeout(() => {
+          navigate('/vendordashboard/productsmanagement');
+        }, 1500);
+      } else {
+        // For premium plans, use the premium payment endpoint
+        const selectedPlan = promotionPlans.find(plan => plan.type === selectedPromotion);
+        if (!selectedPlan) {
+          throw new Error('Selected promotion plan not found');
         }
+
+        // CRITICAL FIX: Append promotion plan with correct field name (matching Postman example)
+        formData.append('promotionPlan[type]', selectedPromotion);
+
+        console.log('Submitting premium product with promotion:', selectedPromotion);
+        console.log('FormData contents:');
+        for (let pair of formData.entries()) {
+          console.log(pair[0] + ': ' + pair[1]);
+        }
+
+        const response = await axios.post(
+          'https://clark-backend.onrender.com/api/v1/payments/create-premium-payment',
+          formData,
+          {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Content-Type': 'multipart/form-data',
+            }
+          }
+        );
+
+        const responseData = response.data.data;
+        setPaymentData(responseData);
+        setPaymentReference(responseData.reference);
+        setPaymentStep('payment_processing');
+
+        toast.info('Product created! Proceeding to payment...', {
+          position: "top-right",
+          autoClose: 3000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+        });
+
+        // Open payment URL in new window/tab
+        window.open(responseData.paymentUrl, '_blank');
       }
-
-      // Show success toast for free plan
-      toast.success('Product added successfully!', {
-        position: "top-right",
-        autoClose: 3000,
-        hideProgressBar: false,
-        closeOnClick: true,
-        pauseOnHover: true,
-        draggable: true,
-      });
-      
-      // Reset form
-      resetForm();
-
-      // Navigate to products page after a short delay
-      setTimeout(() => {
-        navigate('/products');
-      }, 1500);
 
     } catch (err) {
       console.error('Error submitting product:', err);
+      console.error('Response data:', err.response?.data);
       const errorMessage = err.response?.data?.message || 'Failed to add product. Please try again.';
       toast.error(errorMessage, {
         position: "top-right",
@@ -581,6 +525,9 @@ const AddProducts = () => {
     setValue('town', '');
     setValue('specificAddress', '');
     setSelectedPromotion('free');
+    setPaymentStep('form');
+    setPaymentData(null);
+    setPaymentReference(null);
   };
 
   const handleImageUpload = (e) => {
@@ -646,6 +593,103 @@ const AddProducts = () => {
   const selectedRegion = watch('region');
   const selectedLocationData = GHANA_LOCATIONS.find(loc => loc.region === selectedRegion);
   const availableTowns = selectedLocationData?.towns || [];
+
+  // Render different steps based on payment flow
+  if (paymentStep === 'payment_processing') {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+        <div className="text-center py-12">
+          <CreditCard className="h-16 w-16 text-blue-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-4">Payment Processing</h2>
+          <p className="text-gray-600 mb-6">
+            Your product has been created and is waiting for payment confirmation.
+          </p>
+          
+          {paymentData && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6 max-w-md mx-auto">
+              <h3 className="font-semibold mb-3">Payment Details</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Amount:</span>
+                  <span className="font-medium">${paymentData.amount}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Reference:</span>
+                  <span className="font-medium text-xs">{paymentData.reference}</span>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          <div className="flex items-center justify-center space-x-2 mb-6">
+            {isCheckingPayment ? (
+              <>
+                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-600"></div>
+                <span className="text-sm text-gray-600">Checking payment status...</span>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-5 w-5 text-yellow-600" />
+                <span className="text-sm text-gray-600">Waiting for payment confirmation</span>
+              </>
+            )}
+          </div>
+          
+          {paymentData && (
+            <div className="space-y-3">
+              <p className="text-sm text-gray-600">
+                Complete your payment in the new window/tab that opened.
+              </p>
+              <button
+                onClick={() => window.open(paymentData.paymentUrl, '_blank')}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-md transition-colors"
+              >
+                Open Payment Page Again
+              </button>
+            </div>
+          )}
+          
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setPaymentStep('form');
+                setPaymentReference(null);
+                setPaymentData(null);
+              }}
+              className="text-gray-600 hover:text-gray-800 transition-colors"
+            >
+              Back to Form
+            </button>
+          </div>
+        </div>
+        <ToastContainer />
+      </div>
+    );
+  }
+
+  if (paymentStep === 'payment_success') {
+    return (
+      <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
+        <div className="text-center py-12">
+          <CheckCircle className="h-16 w-16 text-green-600 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold mb-4">Payment Successful!</h2>
+          <p className="text-gray-600 mb-6">
+            Your product is now live with premium promotion features.
+          </p>
+          <div className="space-y-3">
+            <button
+              onClick={() => navigate('/vendordashboard/productsmanagement')}
+              className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-md transition-colors"
+            >
+              View My Products
+            </button>
+            <p className="text-sm text-gray-500">Redirecting automatically in a few seconds...</p>
+          </div>
+        </div>
+        <ToastContainer />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white rounded-lg shadow-md">
@@ -947,7 +991,7 @@ const AddProducts = () => {
           <h2 className="text-xl font-semibold mb-4">Promotion Plan</h2>
           
           <div className="space-y-3">
-            <label className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <label key="free-plan" className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-gray-50 cursor-pointer">
               <input
                 type="radio"
                 className="text-indigo-600 focus:ring-indigo-500"
@@ -969,11 +1013,11 @@ const AddProducts = () => {
                   onChange={() => setSelectedPromotion(plan.type)}
                 />
                 <span className="flex-1">
-                  <span className="block font-medium">{plan.name} (${plan.price})</span>
+                  <span className="block font-medium">{plan.name} (GH₵{plan.price})</span>
                   <span className="block text-sm text-gray-500">{plan.description}</span>
                   {selectedPromotion === plan.type && (
                     <span className="block text-xs text-blue-600 mt-1">
-                      📝 Product will be created first, then payment will activate promotion
+                      Product will be created first, then payment will activate promotion
                     </span>
                   )}
                 </span>
@@ -987,7 +1031,7 @@ const AddProducts = () => {
           <button
             type="button"
             className="px-6 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50 transition-colors"
-            onClick={() => navigate('/products')}
+            onClick={() => navigate('/vendordashboard/productsmanagement')}
           >
             Cancel
           </button>
@@ -1009,7 +1053,10 @@ const AddProducts = () => {
             ) : selectedPromotion === 'free' ? (
               'Add Product'
             ) : (
-              'Create Product & Pay'
+              <span className="flex items-center">
+                <CreditCard className="h-4 w-4 mr-2" />
+                Create Product & Pay
+              </span>
             )}
           </button>
         </div>
